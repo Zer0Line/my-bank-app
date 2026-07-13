@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: my-bank-front-app
+
+server:
+  port: 9090
