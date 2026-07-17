@@ -1,6 +1,19 @@
 spring:
   application:
     name: my-bank-front-app
-
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: bank-ui
+            client-secret: ui-client-secret
+            authorization-grant-type: authorization_code
+            scope: openid, profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            provider: keycloak
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8082/realms/bank-realm
 server:
   port: 9090
