@@ -1,1 +1,9 @@
-rootProject.name = 'my-bank-front-app'
+rootProject.name = 'my-bank-app'
+
+include 'accounts-service'
+include 'cash-service'
+include 'transfer-service'
+include 'notification-service'
+include 'eureka-service'
+include 'gateway-service'
+include 'frontend-service'

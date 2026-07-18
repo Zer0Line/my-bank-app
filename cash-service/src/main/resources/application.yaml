@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: cash-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankdb
+    username: bankuser
+    password: bankpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+server:
+  port: 8082

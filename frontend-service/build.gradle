@@ -1,0 +1,12 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation libs.spring.boot.starter.thymeleaf
+    implementation libs.spring.boot.starter.web
+    implementation libs.spring.security.config
+    implementation libs.spring.security.web
+    implementation libs.spring.boot.starter.oauth2.client
+    testImplementation libs.spring.boot.starter.test
+}
