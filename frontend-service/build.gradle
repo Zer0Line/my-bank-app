@@ -8,5 +8,7 @@ dependencies {
     implementation libs.spring.security.config
     implementation libs.spring.security.web
     implementation libs.spring.boot.starter.oauth2.client
+    implementation libs.spring.cloud.starter.openfeign
+    implementation libs.spring.cloud.starter.netflix.eureka.client
     testImplementation libs.spring.boot.starter.test
 }
