@@ -1,6 +1,7 @@
 [versions]
 spring-boot = "3.5.8"
 spring-cloud = "2025.0.3"
+mapstruct = "1.6.3"
 
 [libraries]
 spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
@@ -20,6 +21,10 @@ spring-cloud-starter-gateway = { module = "org.springframework.cloud:spring-clou
 spring-cloud-gateway-server-webflux = { module = "org.springframework.cloud:spring-cloud-gateway-server-webflux" }
 spring-cloud-starter-netflix-eureka-client = { module = "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client" }
 spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+lombok = { module = "org.projectlombok:lombok" }
+lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version = "0.2.0" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

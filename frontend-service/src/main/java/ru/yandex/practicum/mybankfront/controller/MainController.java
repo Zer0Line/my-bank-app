@@ -65,9 +65,8 @@ public class MainController {
      * 3. Текущего пользователя можно получить из контекста Security
      */
     @GetMapping("/account")
-    public String getAccount(Model model, @AuthenticationPrincipal OidcUser user) {
-        String login = user.getPreferredUsername();
-        AccountResponse response = accountsClient.getAccount(login);
+    public String getAccount(Model model) {
+        AccountResponse response = accountsClient.getAccount();
         fillModel(model, response, null, null);
         return "main";
     }
@@ -86,15 +85,13 @@ public class MainController {
     @PostMapping("/account")
     public String editAccount(
             Model model,
-            @AuthenticationPrincipal OidcUser user,
             @RequestParam("name") String name,
             @RequestParam("birthdate") LocalDate birthdate
     ) {
-        String login = user.getPreferredUsername();
         UpdateAccountRequest request = new UpdateAccountRequest(
                 name, birthdate.format(DateTimeFormatter.ISO_DATE)
         );
-        AccountResponse response = accountsClient.updateAccount(login, request);
+        AccountResponse response = accountsClient.updateAccount(request);
         fillModel(model, response, null, "Данные обновлены");
         return "main";
     }

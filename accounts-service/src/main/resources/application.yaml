@@ -1,12 +1,17 @@
 spring:
   application:
     name: accounts-service
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
   datasource:
     url: jdbc:postgresql://localhost:5432/bankdb
     username: bankuser
     password: bankpass
     driver-class-name: org.postgresql.Driver
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true
