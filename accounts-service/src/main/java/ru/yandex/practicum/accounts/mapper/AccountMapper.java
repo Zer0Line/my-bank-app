@@ -2,6 +2,7 @@ package ru.yandex.practicum.accounts.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import ru.yandex.practicum.accounts.dto.AccountDto;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
 import ru.yandex.practicum.accounts.entity.AccountEntity;
 
@@ -13,4 +14,7 @@ public interface AccountMapper {
     @Mapping(target = "sum", source = "amount")
     @Mapping(target = "accounts", expression = "java(java.util.List.of())")
     AccountResponse toResponse(AccountEntity entity);
+
+    @Mapping(target = "name", expression = "java(entity.getSurename() + \" \" + entity.getName())")
+    AccountDto toDto(AccountEntity entity);
 }

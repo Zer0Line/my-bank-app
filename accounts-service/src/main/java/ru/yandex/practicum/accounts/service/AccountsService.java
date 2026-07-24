@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.accounts.dto.AccountDto;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
 import ru.yandex.practicum.accounts.dto.CashAction;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -30,8 +32,18 @@ public class AccountsService {
     public AccountResponse getAccount() {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
-        log.info("Account found for login='{}': {}", login, account);
-        return accountMapper.toResponse(account);
+        List<AccountEntity> otherAccounts = accountRepository.findAllByLoginIsNot(login);
+        List<AccountDto> accountDtos = otherAccounts.stream()
+                .map(accountMapper::toDto)
+                .toList();
+        log.info("Account found for login='{}': {}, other accounts count={}", login, account, accountDtos.size());
+        return new AccountResponse(
+                account.getLogin(),
+                account.getSurename() + " " + account.getName(),
+                account.getDateOfBirth().toString(),
+                account.getAmount(),
+                accountDtos
+        );
     }
 
     public AccountResponse updateAccount(UpdateAccountRequest request) {
