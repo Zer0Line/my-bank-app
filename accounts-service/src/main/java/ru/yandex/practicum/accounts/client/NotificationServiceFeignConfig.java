@@ -1,4 +1,4 @@
-package ru.yandex.practicum.cash.client;
+package ru.yandex.practicum.accounts.client;
 
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.server.ResponseStatusException;
 
-public class AccountsServiceFeignConfig {
+public class NotificationServiceFeignConfig {
 
     @Bean
     public RequestInterceptor clientCredentialsInterceptor(
@@ -16,7 +16,7 @@ public class AccountsServiceFeignConfig {
         return requestTemplate -> {
             OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
                     .withClientRegistrationId("service-client")
-                    .principal("cash-service")
+                    .principal("accounts-service")
                     .build();
 
             OAuth2AuthorizedClient authorizedClient =

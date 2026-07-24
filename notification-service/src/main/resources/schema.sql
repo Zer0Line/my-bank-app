@@ -1,0 +1,10 @@
+CREATE SCHEMA IF NOT EXISTS notifications;
+
+CREATE TABLE IF NOT EXISTS notifications.operations (
+    id BIGSERIAL PRIMARY KEY,
+    login VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    amount INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

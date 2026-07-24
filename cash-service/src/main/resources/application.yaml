@@ -17,12 +17,12 @@ spring:
           issuer-uri: http://localhost:8082/realms/bank-realm
       client:
         registration:
-          accounts-client:
+          service-client:
             client-id: transfer-service
             client-secret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
             authorization-grant-type: client_credentials
         provider:
-          accounts-client:
+          service-client:
             token-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/token
 server:
   port: 8084

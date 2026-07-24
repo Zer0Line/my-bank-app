@@ -15,7 +15,7 @@ public class AccountsServiceFeignConfig {
             OAuth2AuthorizedClientManager authorizedClientManager) {
         return requestTemplate -> {
             OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                    .withClientRegistrationId("accounts-client")
+                    .withClientRegistrationId("service-client")
                     .principal("transfer-service")
                     .build();
 

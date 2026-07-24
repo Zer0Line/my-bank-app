@@ -6,9 +6,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.accounts.client.NotificationServiceClient;
 import ru.yandex.practicum.accounts.dto.AccountDto;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
 import ru.yandex.practicum.accounts.dto.CashAction;
+import ru.yandex.practicum.accounts.dto.OperationRequest;
 import ru.yandex.practicum.accounts.dto.TransferRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAmountRequest;
@@ -29,6 +31,7 @@ public class AccountsService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
+    private final NotificationServiceClient notificationClient;
 
     public AccountResponse getAccount() {
         String login = extractLogin();
@@ -46,6 +49,7 @@ public class AccountsService {
 
         AccountEntity saved = accountRepository.save(account);
         log.info("Account updated for login='{}': {}", login, saved);
+        notificationClient.saveOperation(new OperationRequest(login, "ACCOUNT_UPDATE", "Account details updated", null));
         return buildFullResponse(login, saved);
     }
 
@@ -65,6 +69,7 @@ public class AccountsService {
         account.setAmount(newAmount);
         AccountEntity saved = accountRepository.save(account);
         log.info("Amount updated for login='{}': new amount={}", request.login(), newAmount);
+        notificationClient.saveOperation(new OperationRequest(request.login(), "CASH_" + request.action().name(), "Cash operation", request.value()));
         return buildFullResponse(request.login(), saved);
     }
 
@@ -86,6 +91,13 @@ public class AccountsService {
 
         log.info("Transfer completed: sender='{}', recipient='{}', amount={}",
                 request.senderLogin(), request.recipientLogin(), request.amount());
+
+        notificationClient.saveOperations(List.of(
+                new OperationRequest(request.senderLogin(), "TRANSFER_SENT",
+                        "Transfer to " + request.recipientLogin(), request.amount()),
+                new OperationRequest(request.recipientLogin(), "TRANSFER_RECEIVED",
+                        "Transfer from " + request.senderLogin(), request.amount())
+        ));
 
         return buildFullResponse(request.senderLogin(), sender);
     }

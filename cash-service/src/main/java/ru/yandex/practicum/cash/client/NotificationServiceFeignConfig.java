@@ -8,7 +8,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.server.ResponseStatusException;
 
-public class AccountsServiceFeignConfig {
+public class NotificationServiceFeignConfig {
 
     @Bean
     public RequestInterceptor clientCredentialsInterceptor(

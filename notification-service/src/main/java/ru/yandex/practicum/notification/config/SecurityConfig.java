@@ -1,4 +1,4 @@
-package ru.yandex.practicum.transfer.config;
+package ru.yandex.practicum.notification.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/transfers/**").hasAuthority("TRANSFER_WRITE")
+                        .requestMatchers("/api/notifications/**").hasAuthority("SERVICE")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
