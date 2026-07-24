@@ -10,5 +10,7 @@ dependencies {
     implementation libs.spring.boot.starter.oauth2.client
     implementation libs.spring.cloud.starter.openfeign
     implementation libs.spring.cloud.starter.netflix.eureka.client
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
     testImplementation libs.spring.boot.starter.test
 }

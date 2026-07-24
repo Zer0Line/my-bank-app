@@ -10,8 +10,22 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/bank-realm
+      client:
+        registration:
+          accounts-client:
+            client-id: transfer-service
+            client-secret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
+            authorization-grant-type: client_credentials
+        provider:
+          accounts-client:
+            token-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/token
 server:
-  port: 8082
+  port: 8084
 
 eureka:
   instance:

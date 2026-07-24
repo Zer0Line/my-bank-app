@@ -1,7 +1,6 @@
 package ru.yandex.practicum.gateway.security;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -20,10 +19,8 @@ import reactor.core.publisher.Mono;
  * filters:
  * - name: JwtTokenRelay
  */
+@Slf4j
 public class JwtTokenRelayGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
-
-    private static final Logger log =
-            LoggerFactory.getLogger(JwtTokenRelayGatewayFilterFactory.class);
 
     public JwtTokenRelayGatewayFilterFactory() {
         super(Object.class);

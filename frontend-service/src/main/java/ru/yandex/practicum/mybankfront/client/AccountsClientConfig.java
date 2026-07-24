@@ -3,6 +3,7 @@ package ru.yandex.practicum.mybankfront.client;
 import feign.Logger;
 import feign.RequestInterceptor;
 import feign.codec.ErrorDecoder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,13 +13,10 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
 @Configuration
+@RequiredArgsConstructor
 public class AccountsClientConfig {
 
     private final OAuth2AuthorizedClientService authorizedClientService;
-
-    public AccountsClientConfig(OAuth2AuthorizedClientService authorizedClientService) {
-        this.authorizedClientService = authorizedClientService;
-    }
 
     @Bean
     public ErrorDecoder errorDecoder() {
