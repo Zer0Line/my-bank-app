@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.accounts.dto.AccountDto;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
 import ru.yandex.practicum.accounts.dto.CashAction;
+import ru.yandex.practicum.accounts.dto.TransferRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAmountRequest;
 import ru.yandex.practicum.accounts.entity.AccountEntity;
@@ -32,18 +33,8 @@ public class AccountsService {
     public AccountResponse getAccount() {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
-        List<AccountEntity> otherAccounts = accountRepository.findAllByLoginIsNot(login);
-        List<AccountDto> accountDtos = otherAccounts.stream()
-                .map(accountMapper::toDto)
-                .toList();
-        log.info("Account found for login='{}': {}, other accounts count={}", login, account, accountDtos.size());
-        return new AccountResponse(
-                account.getLogin(),
-                account.getSurename() + " " + account.getName(),
-                account.getDateOfBirth().toString(),
-                account.getAmount(),
-                accountDtos
-        );
+        log.info("Account found for login='{}': {}", login, account);
+        return buildFullResponse(login, account);
     }
 
     public AccountResponse updateAccount(UpdateAccountRequest request) {
@@ -55,7 +46,7 @@ public class AccountsService {
 
         AccountEntity saved = accountRepository.save(account);
         log.info("Account updated for login='{}': {}", login, saved);
-        return accountMapper.toResponse(saved);
+        return buildFullResponse(login, saved);
     }
 
     public AccountResponse updateAmount(UpdateAmountRequest request) {
@@ -74,7 +65,43 @@ public class AccountsService {
         account.setAmount(newAmount);
         AccountEntity saved = accountRepository.save(account);
         log.info("Amount updated for login='{}': new amount={}", request.login(), newAmount);
-        return accountMapper.toResponse(saved);
+        return buildFullResponse(request.login(), saved);
+    }
+
+    public AccountResponse transfer(TransferRequest request) {
+        AccountEntity sender = findAccountByLogin(request.senderLogin());
+        AccountEntity recipient = findAccountByLogin(request.recipientLogin());
+
+        int newSenderAmount = sender.getAmount() - request.amount();
+        if (newSenderAmount < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Insufficient funds");
+        }
+
+        sender.setAmount(newSenderAmount);
+        recipient.setAmount(recipient.getAmount() + request.amount());
+
+        accountRepository.save(sender);
+        accountRepository.save(recipient);
+
+        log.info("Transfer completed: sender='{}', recipient='{}', amount={}",
+                request.senderLogin(), request.recipientLogin(), request.amount());
+
+        return buildFullResponse(request.senderLogin(), sender);
+    }
+
+    private AccountResponse buildFullResponse(String login, AccountEntity account) {
+        List<AccountEntity> otherAccounts = accountRepository.findAllByLoginIsNot(login);
+        List<AccountDto> accountDtos = otherAccounts.stream()
+                .map(accountMapper::toDto)
+                .toList();
+        return new AccountResponse(
+                account.getLogin(),
+                account.getSurename() + " " + account.getName(),
+                account.getDateOfBirth().toString(),
+                account.getAmount(),
+                accountDtos
+        );
     }
 
     private String extractLogin() {
