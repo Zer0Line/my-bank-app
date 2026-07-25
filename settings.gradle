@@ -1,5 +1,6 @@
 rootProject.name = 'my-bank-app'
 
+include 'configuration-service'
 include 'accounts-service'
 include 'cash-service'
 include 'transfer-service'
