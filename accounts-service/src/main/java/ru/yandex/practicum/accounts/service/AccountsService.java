@@ -2,14 +2,15 @@ package ru.yandex.practicum.accounts.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.accounts.client.NotificationServiceClient;
 import ru.yandex.practicum.accounts.dto.AccountDto;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
-import ru.yandex.practicum.accounts.dto.CashAction;
 import ru.yandex.practicum.accounts.dto.OperationRequest;
 import ru.yandex.practicum.accounts.dto.TransferRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
@@ -17,9 +18,6 @@ import ru.yandex.practicum.accounts.dto.UpdateAmountRequest;
 import ru.yandex.practicum.accounts.entity.AccountEntity;
 import ru.yandex.practicum.accounts.mapper.AccountMapper;
 import ru.yandex.practicum.accounts.repository.AccountRepository;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -44,7 +42,9 @@ public class AccountsService {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
 
-        account.setName(request.name());
+        String[] parts = request.name().split(" ", 2);
+        account.setSurename(parts[0]);
+        account.setName(parts.length > 1 ? parts[1] : "");
         account.setDateOfBirth(LocalDate.parse(request.birthdate()));
 
         AccountEntity saved = accountRepository.save(account);
