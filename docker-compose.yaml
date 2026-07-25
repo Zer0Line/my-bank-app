@@ -1,1 +1,205 @@
 services:
+  configuration-service:
+    image: configuration-service:0.0.1-SNAPSHOT
+    container_name: bank-configuration-service
+    ports:
+      - "8888:8888"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8888/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  eureka-service:
+    image: eureka-service:0.0.1-SNAPSHOT
+    container_name: bank-eureka-service
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8761/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  gateway-service:
+    image: gateway-service:0.0.1-SNAPSHOT
+    container_name: bank-gateway-service
+    ports:
+      - "9091:9091"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9091/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  accounts-service:
+    image: accounts-service:0.0.1-SNAPSHOT
+    container_name: bank-accounts-service
+    ports:
+      - "9092:9092"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: bankuser
+      SPRING_DATASOURCE_PASSWORD: bankpass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+      SPRING_APPLICATION_JSON: '{"spring":{"security":{"oauth2":{"client":{"provider":{"service-client":{"token-uri":"http://keycloak:8080/realms/bank-realm/protocol/openid-connect/token"}}}}}}}'
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9092/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  cash-service:
+    image: cash-service:0.0.1-SNAPSHOT
+    container_name: bank-cash-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: bankuser
+      SPRING_DATASOURCE_PASSWORD: bankpass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+      SPRING_APPLICATION_JSON: '{"spring":{"security":{"oauth2":{"client":{"provider":{"service-client":{"token-uri":"http://keycloak:8080/realms/bank-realm/protocol/openid-connect/token"}}}}}}}'
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8084/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  transfer-service:
+    image: transfer-service:0.0.1-SNAPSHOT
+    container_name: bank-transfer-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: bankuser
+      SPRING_DATASOURCE_PASSWORD: bankpass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+      SPRING_APPLICATION_JSON: '{"spring":{"security":{"oauth2":{"client":{"provider":{"service-client":{"token-uri":"http://keycloak:8080/realms/bank-realm/protocol/openid-connect/token"}}}}}}}'
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8083/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  notification-service:
+    image: notification-service:0.0.1-SNAPSHOT
+    container_name: bank-notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb
+      SPRING_DATASOURCE_USERNAME: bankuser
+      SPRING_DATASOURCE_PASSWORD: bankpass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8085/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+  frontend-service:
+    image: frontend-service:0.0.1-SNAPSHOT
+    container_name: bank-frontend-service
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configuration-service:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka/
+      GATEWAY_BASE_URL: http://gateway-service:9091
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION_URI: http://localhost:8082/realms/bank-realm/protocol/openid-connect/auth
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USER_INFO_URI: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/userinfo
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9090/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bank-network
+
+networks:
+  bank-network:
+    name: bank-network
+    driver: bridge

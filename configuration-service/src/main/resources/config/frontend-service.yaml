@@ -12,7 +12,11 @@ spring:
             provider: keycloak
         provider:
           keycloak:
-            issuer-uri: http://localhost:8082/realms/bank-realm
+            authorization-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/auth
+            token-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/token
+            jwk-set-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/certs
+            user-info-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/userinfo
+            user-name-attribute: preferred_username
 server:
   port: 9090
 gateway:

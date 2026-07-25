@@ -44,4 +44,154 @@ subprojects {
     tasks.named('test') {
         useJUnitPlatform()
     }
+
+    def servicePorts = [
+        'configuration-service': '8888',
+        'eureka-service'       : '8761',
+        'gateway-service'      : '9091',
+        'accounts-service'     : '9092',
+        'cash-service'         : '8084',
+        'transfer-service'     : '8083',
+        'notification-service' : '8085',
+        'frontend-service'     : '9090',
+    ]
+
+    pluginManager.withPlugin('org.springframework.boot') {
+        dependencies {
+            implementation libs.spring.boot.starter.actuator
+        }
+        tasks.named('bootBuildImage') {
+            onlyIf { false }
+        }
+        tasks.register('dockerBuildImage') {
+            dependsOn tasks.named('bootJar')
+            doLast {
+                def imageTag = "${project.name}:${project.version}"
+                def jarFile = tasks.named('bootJar').get().archiveFile.get().asFile
+                def relativeJar = rootProject.rootDir.toPath().relativize(jarFile.toPath())
+                def port = servicePorts[project.name]
+
+                def result = exec {
+                    commandLine 'docker', 'image', 'inspect', imageTag
+                    ignoreExitValue true
+                }
+                if (result.exitValue == 0) {
+                    logger.lifecycle("Image '{}' already exists, skipping", imageTag)
+                    return
+                }
+
+                exec {
+                    workingDir rootProject.rootDir
+                    commandLine 'docker', 'build',
+                        '-t', imageTag,
+                        '--build-arg', "JAR_FILE=${relativeJar}",
+                        '--build-arg', "APP_PORT=${port}",
+                        '-f', 'Dockerfile',
+                        '.'
+                }
+                logger.lifecycle("Image '{}' built successfully", imageTag)
+            }
+        }
+    }
+}
+
+def serviceProjects = [
+    'configuration-service',
+    'eureka-service',
+    'accounts-service',
+    'cash-service',
+    'transfer-service',
+    'notification-service',
+    'gateway-service',
+    'frontend-service'
+]
+
+tasks.register('dockerBuildImages') {
+    group = 'docker'
+    description = 'Build Docker images for all services'
+    dependsOn subprojects.findAll { p -> serviceProjects.contains(p.name) }
+        .collect { "${it.path}:dockerBuildImage" }
+    doFirst {
+        logger.lifecycle("=== Docker image build plan ===")
+        serviceProjects.each { name ->
+            def imageTag = "${name}:${version}"
+            def result = exec {
+                commandLine 'docker', 'image', 'inspect', imageTag
+                ignoreExitValue true
+            }
+            if (result.exitValue == 0) {
+                logger.lifecycle("  [SKIP]  {} already exists", imageTag)
+            } else {
+                logger.lifecycle("  [BUILD] {}", imageTag)
+            }
+        }
+        logger.lifecycle("===============================")
+    }
+}
+
+tasks.register('dockerComposeInfraUp') {
+    group = 'docker'
+    description = 'Start postgres and keycloak'
+    doLast {
+        exec {
+            workingDir rootDir
+            commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'up', '-d'
+        }
+    }
+}
+
+tasks.register('dockerComposeAppsUp') {
+    group = 'docker'
+    description = 'Start all microservices (config, eureka, gateway, accounts, cash, transfer, notification, frontend)'
+    doLast {
+        exec {
+            workingDir rootDir
+            commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'up', '-d'
+        }
+    }
+}
+
+tasks.register('dockerComposeUp') {
+    group = 'docker'
+    description = 'Start infra → apps'
+    dependsOn tasks.dockerComposeInfraUp, tasks.dockerComposeAppsUp
+    tasks.dockerComposeAppsUp.mustRunAfter tasks.dockerComposeInfraUp
+}
+
+tasks.register('dockerComposeAppsDown') {
+    group = 'docker'
+    description = 'Stop microservices'
+    doLast {
+        exec {
+            workingDir rootDir
+            commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'down'
+        }
+    }
+}
+
+tasks.register('dockerComposeInfraDown') {
+    group = 'docker'
+    description = 'Stop postgres and keycloak'
+    doLast {
+        exec {
+            workingDir rootDir
+            commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'down'
+        }
+    }
+}
+
+tasks.register('dockerComposeDown') {
+    group = 'docker'
+    description = 'Stop apps → infra'
+    dependsOn tasks.dockerComposeAppsDown, tasks.dockerComposeInfraDown
+    tasks.dockerComposeInfraDown.mustRunAfter tasks.dockerComposeAppsDown
+}
+
+tasks.register('dockerComposeDownVolumes') {
+    group = 'docker'
+    description = 'Stop all services and remove volumes'
+    doLast {
+        exec { workingDir rootDir; commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'down' }
+        exec { workingDir rootDir; commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'down', '-v' }
+    }
 }
