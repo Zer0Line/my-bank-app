@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.service.TransferService;
 
+import java.math.BigDecimal;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -50,10 +52,10 @@ class TransferControllerTest {
         mockMvc.perform(post("/api/transfers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new TransferActionRequest(300, "recipient"))))
+                                new TransferActionRequest(BigDecimal.valueOf(300), "recipient"))))
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(transferService).transfer(eq("sender"), eq(new TransferActionRequest(300, "recipient")));
+        verify(transferService).transfer(eq("sender"), eq(new TransferActionRequest(BigDecimal.valueOf(300), "recipient")));
     }
 }

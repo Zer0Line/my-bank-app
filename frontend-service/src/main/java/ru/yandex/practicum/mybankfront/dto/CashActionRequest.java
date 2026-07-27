@@ -1,7 +1,9 @@
 package ru.yandex.practicum.mybankfront.dto;
 
+import java.math.BigDecimal;
+
 public record CashActionRequest(
-        int value,
+        BigDecimal value,
         CashAction action
 ) {
 }

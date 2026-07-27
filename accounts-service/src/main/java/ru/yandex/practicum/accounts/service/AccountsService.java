@@ -1,9 +1,12 @@
 package ru.yandex.practicum.accounts.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
@@ -19,18 +22,21 @@ import ru.yandex.practicum.accounts.entity.AccountEntity;
 import ru.yandex.practicum.accounts.mapper.AccountMapper;
 import ru.yandex.practicum.accounts.repository.AccountRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AccountsService {
 
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final NotificationServiceClient notificationClient;
 
+    @Transactional(readOnly = true)
     public AccountResponse getAccount() {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
@@ -38,6 +44,8 @@ public class AccountsService {
         return buildFullResponse(login, account);
     }
 
+    @CircuitBreaker(name = "notification-service", fallbackMethod = "fallbackAfterNotification")
+    @Retry(name = "notification-service")
     public AccountResponse updateAccount(UpdateAccountRequest request) {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
@@ -53,15 +61,17 @@ public class AccountsService {
         return buildFullResponse(login, saved);
     }
 
+    @CircuitBreaker(name = "notification-service", fallbackMethod = "fallbackAfterNotification")
+    @Retry(name = "notification-service")
     public AccountResponse updateAmount(UpdateAmountRequest request) {
         AccountEntity account = findAccountByLogin(request.login());
 
-        int newAmount = switch (request.action()) {
-            case GET -> account.getAmount() - request.value();
-            case PUT -> account.getAmount() + request.value();
+        BigDecimal newAmount = switch (request.action()) {
+            case GET -> account.getAmount().subtract(request.value());
+            case PUT -> account.getAmount().add(request.value());
         };
 
-        if (newAmount < 0) {
+        if (newAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Insufficient funds");
         }
@@ -73,18 +83,20 @@ public class AccountsService {
         return buildFullResponse(request.login(), saved);
     }
 
+    @CircuitBreaker(name = "notification-service", fallbackMethod = "fallbackAfterNotificationBatch")
+    @Retry(name = "notification-service")
     public AccountResponse transfer(TransferRequest request) {
         AccountEntity sender = findAccountByLogin(request.senderLogin());
         AccountEntity recipient = findAccountByLogin(request.recipientLogin());
 
-        int newSenderAmount = sender.getAmount() - request.amount();
-        if (newSenderAmount < 0) {
+        BigDecimal newSenderAmount = sender.getAmount().subtract(request.amount());
+        if (newSenderAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Insufficient funds");
         }
 
         sender.setAmount(newSenderAmount);
-        recipient.setAmount(recipient.getAmount() + request.amount());
+        recipient.setAmount(recipient.getAmount().add(request.amount()));
 
         accountRepository.save(sender);
         accountRepository.save(recipient);
@@ -99,6 +111,25 @@ public class AccountsService {
                         "Transfer from " + request.senderLogin(), request.amount())
         ));
 
+        return buildFullResponse(request.senderLogin(), sender);
+    }
+
+    private AccountResponse fallbackAfterNotification(UpdateAccountRequest request, Throwable t) {
+        log.warn("Notification service unavailable for updateAccount, proceeding without notification", t);
+        String login = extractLogin();
+        AccountEntity account = findAccountByLogin(login);
+        return buildFullResponse(login, account);
+    }
+
+    private AccountResponse fallbackAfterNotification(UpdateAmountRequest request, Throwable t) {
+        log.warn("Notification service unavailable for updateAmount, proceeding without notification", t);
+        AccountEntity account = findAccountByLogin(request.login());
+        return buildFullResponse(request.login(), account);
+    }
+
+    private AccountResponse fallbackAfterNotificationBatch(TransferRequest request, Throwable t) {
+        log.warn("Notification service unavailable for transfer notification, proceeding without notification", t);
+        AccountEntity sender = findAccountByLogin(request.senderLogin());
         return buildFullResponse(request.senderLogin(), sender);
     }
 

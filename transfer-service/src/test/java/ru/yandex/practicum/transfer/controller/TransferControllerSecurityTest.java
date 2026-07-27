@@ -16,6 +16,7 @@ import ru.yandex.practicum.transfer.config.TestSecurityConfig;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.service.TransferService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ class TransferControllerSecurityTest {
     void transfer_withoutToken_shouldReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/api/transfers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TransferActionRequest(500, "recipient"))))
+                        .content(objectMapper.writeValueAsString(new TransferActionRequest(BigDecimal.valueOf(500), "recipient"))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -59,7 +60,7 @@ class TransferControllerSecurityTest {
     void transfer_withWrongRole_shouldReturnForbidden() throws Exception {
         mockMvc.perform(post("/api/transfers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TransferActionRequest(500, "recipient")))
+                        .content(objectMapper.writeValueAsString(new TransferActionRequest(BigDecimal.valueOf(500), "recipient")))
                         .with(authentication(tokenWithRoles("WRONG_ROLE"))))
                 .andExpect(status().isForbidden());
     }
@@ -68,7 +69,7 @@ class TransferControllerSecurityTest {
     void transfer_withCorrectRole_shouldSucceed() throws Exception {
         mockMvc.perform(post("/api/transfers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TransferActionRequest(500, "recipient")))
+                        .content(objectMapper.writeValueAsString(new TransferActionRequest(BigDecimal.valueOf(500), "recipient")))
                         .with(authentication(tokenWithRoles("TRANSFER_WRITE"))))
                 .andExpect(status().isOk());
     }

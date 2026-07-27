@@ -1,7 +1,9 @@
 package ru.yandex.practicum.mybankfront.dto;
 
+import java.math.BigDecimal;
+
 public record TransferRequest(
-        int value,
+        BigDecimal value,
         String login
 ) {
 }

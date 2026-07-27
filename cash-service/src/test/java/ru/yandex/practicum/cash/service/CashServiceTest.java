@@ -13,6 +13,7 @@ import ru.yandex.practicum.cash.dto.CashAction;
 import ru.yandex.practicum.cash.dto.OperationRequest;
 import ru.yandex.practicum.cash.dto.UpdateAmountRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,17 +36,17 @@ class CashServiceTest {
     @Test
     void processCashAction() {
         var response = new AccountResponse(
-                "testuser", "Test User", "2000-01-01", 1500,
+                "testuser", "Test User", "2000-01-01", BigDecimal.valueOf(1500),
                 List.of(new AccountDto("other", "Other User"))
         );
         when(accountsServiceClient.updateAmount(any(UpdateAmountRequest.class)))
                 .thenReturn(response);
 
-        AccountResponse result = cashService.processCashAction("testuser", 500, CashAction.PUT);
+        AccountResponse result = cashService.processCashAction("testuser", BigDecimal.valueOf(500), CashAction.PUT);
 
         assertEquals("testuser", result.login());
-        assertEquals(1500, result.sum());
-        verify(accountsServiceClient).updateAmount(new UpdateAmountRequest("testuser", 500, CashAction.PUT));
+        assertEquals(0, BigDecimal.valueOf(1500).compareTo(result.sum()));
+        verify(accountsServiceClient).updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(500), CashAction.PUT));
         verify(notificationClient).saveOperation(any(OperationRequest.class));
     }
 }

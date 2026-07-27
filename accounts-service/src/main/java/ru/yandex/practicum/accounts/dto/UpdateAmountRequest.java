@@ -1,8 +1,10 @@
 package ru.yandex.practicum.accounts.dto;
 
+import java.math.BigDecimal;
+
 public record UpdateAmountRequest(
         String login,
-        int value,
+        BigDecimal value,
         CashAction action
 ) {
 }

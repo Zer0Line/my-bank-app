@@ -11,6 +11,7 @@ import ru.yandex.practicum.notification.dto.OperationRequest;
 import ru.yandex.practicum.notification.entity.OperationEntity;
 import ru.yandex.practicum.notification.repository.OperationRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +35,7 @@ class NotificationServiceTest {
 
     @Test
     void saveOperation() {
-        var request = new OperationRequest("testuser", "CASH_PUT", "Deposit 500", 500);
+        var request = new OperationRequest("testuser", "CASH_PUT", "Deposit 500", BigDecimal.valueOf(500));
 
         notificationService.saveOperation(request);
 
@@ -43,15 +44,15 @@ class NotificationServiceTest {
         assertEquals("testuser", saved.getLogin());
         assertEquals("CASH_PUT", saved.getType());
         assertEquals("Deposit 500", saved.getMessage());
-        assertEquals(500, saved.getAmount());
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(saved.getAmount()));
         assertNotNull(saved.getCreatedAt());
     }
 
     @Test
     void saveOperations() {
         var requests = List.of(
-                new OperationRequest("user1", "TRANSFER_SENT", "Sent 200", 200),
-                new OperationRequest("user2", "TRANSFER_RECEIVED", "Received 200", 200)
+                new OperationRequest("user1", "TRANSFER_SENT", "Sent 200", BigDecimal.valueOf(200)),
+                new OperationRequest("user2", "TRANSFER_RECEIVED", "Received 200", BigDecimal.valueOf(200))
         );
 
         notificationService.saveOperations(requests);

@@ -16,6 +16,8 @@ import ru.yandex.practicum.cash.dto.CashAction;
 import ru.yandex.practicum.cash.dto.CashActionRequest;
 import ru.yandex.practicum.cash.service.CashService;
 
+import java.math.BigDecimal;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -50,10 +52,10 @@ class CashControllerTest {
     void editCash() throws Exception {
         mockMvc.perform(post("/api/cash")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CashActionRequest(500, CashAction.PUT))))
+                        .content(objectMapper.writeValueAsString(new CashActionRequest(BigDecimal.valueOf(500), CashAction.PUT))))
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(cashService).processCashAction(eq("testuser"), eq(500), eq(CashAction.PUT));
+        verify(cashService).processCashAction(eq("testuser"), eq(BigDecimal.valueOf(500)), eq(CashAction.PUT));
     }
 }

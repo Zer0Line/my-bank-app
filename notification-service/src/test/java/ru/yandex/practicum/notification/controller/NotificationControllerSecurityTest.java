@@ -16,6 +16,7 @@ import ru.yandex.practicum.notification.config.TestSecurityConfig;
 import ru.yandex.practicum.notification.dto.OperationRequest;
 import ru.yandex.practicum.notification.service.NotificationService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ class NotificationControllerSecurityTest {
         mockMvc.perform(post("/api/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new OperationRequest("testuser", "TEST", "test message", 100))))
+                                new OperationRequest("testuser", "TEST", "test message", BigDecimal.valueOf(100)))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -61,7 +62,7 @@ class NotificationControllerSecurityTest {
         mockMvc.perform(post("/api/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new OperationRequest("testuser", "TEST", "test message", 100)))
+                                new OperationRequest("testuser", "TEST", "test message", BigDecimal.valueOf(100))))
                         .with(authentication(tokenWithRoles("WRONG_ROLE"))))
                 .andExpect(status().isForbidden());
     }
@@ -71,7 +72,7 @@ class NotificationControllerSecurityTest {
         mockMvc.perform(post("/api/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new OperationRequest("testuser", "TEST", "test message", 100)))
+                                new OperationRequest("testuser", "TEST", "test message", BigDecimal.valueOf(100))))
                         .with(authentication(tokenWithRoles("SERVICE"))))
                 .andExpect(status().isOk());
     }
@@ -79,8 +80,8 @@ class NotificationControllerSecurityTest {
     @Test
     void addOperations_withCorrectRole_shouldSucceed() throws Exception {
         var requests = List.of(
-                new OperationRequest("user1", "TYPE1", "msg1", 100),
-                new OperationRequest("user2", "TYPE2", "msg2", 200)
+                new OperationRequest("user1", "TYPE1", "msg1", BigDecimal.valueOf(100)),
+                new OperationRequest("user2", "TYPE2", "msg2", BigDecimal.valueOf(200))
         );
         mockMvc.perform(post("/api/notifications/batch")
                         .contentType(MediaType.APPLICATION_JSON)

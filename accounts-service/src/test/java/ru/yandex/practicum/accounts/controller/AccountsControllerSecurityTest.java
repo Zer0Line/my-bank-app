@@ -19,6 +19,7 @@ import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAmountRequest;
 import ru.yandex.practicum.accounts.service.AccountsService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +89,7 @@ class AccountsControllerSecurityTest {
         mockMvc.perform(patch("/api/accounts/amount")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateAmountRequest("testuser", 500, CashAction.PUT)))
+                                new UpdateAmountRequest("testuser", BigDecimal.valueOf(500), CashAction.PUT)))
                         .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
                 .andExpect(status().isOk());
     }
@@ -98,7 +99,7 @@ class AccountsControllerSecurityTest {
         mockMvc.perform(post("/api/accounts/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new TransferRequest("sender", "recipient", 200)))
+                                new TransferRequest("sender", "recipient", BigDecimal.valueOf(200))))
                         .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
                 .andExpect(status().isOk());
     }

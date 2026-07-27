@@ -13,6 +13,7 @@ dependencies {
     implementation libs.spring.cloud.starter.openfeign
     implementation libs.feign.hc5
     implementation libs.mapstruct
+    implementation libs.spring.cloud.starter.circuitbreaker.resilience4j
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapstruct.processor

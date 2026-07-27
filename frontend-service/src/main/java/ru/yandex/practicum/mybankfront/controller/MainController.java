@@ -1,6 +1,9 @@
 package ru.yandex.practicum.mybankfront.controller;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +18,7 @@ import ru.yandex.practicum.mybankfront.dto.CashActionRequest;
 import ru.yandex.practicum.mybankfront.dto.TransferRequest;
 import ru.yandex.practicum.mybankfront.dto.UpdateAccountRequest;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -40,6 +44,7 @@ import java.util.List;
  *
  * С примерами использования можно ознакомиться в тестовом классе заглушке AccountStub
  */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class MainController {
@@ -65,6 +70,8 @@ public class MainController {
      * 3. Текущего пользователя можно получить из контекста Security
      */
     @GetMapping("/account")
+    @CircuitBreaker(name = "accounts-client", fallbackMethod = "fallbackGetAccount")
+    @Retry(name = "accounts-client")
     public String getAccount(Model model) {
         AccountResponse response = accountsClient.getAccount();
         fillModel(model, response, null, null);
@@ -83,6 +90,8 @@ public class MainController {
      * 2. birthdate - дата рождения в формате YYYY-DD-MM
      */
     @PostMapping("/account")
+    @CircuitBreaker(name = "accounts-client", fallbackMethod = "fallbackEditAccount")
+    @Retry(name = "accounts-client")
     public String editAccount(
             Model model,
             @RequestParam("name") String name,
@@ -108,16 +117,18 @@ public class MainController {
      * 2. action - GET (снять), PUT (пополнить)
      */
     @PostMapping("/cash")
+    @CircuitBreaker(name = "cash-client", fallbackMethod = "fallbackEditCash")
+    @Retry(name = "cash-client")
     public String editCash(
             Model model,
-            @RequestParam("value") int value,
+            @RequestParam("value") BigDecimal value,
             @RequestParam("action") CashAction action
             ) {
         CashActionRequest request = new CashActionRequest(value, action);
         AccountResponse response = cashClient.editCash(request);
         fillModel(model, response, null, action == CashAction.GET
-                ? "Снято %d руб".formatted(value)
-                : "Положено %d руб".formatted(value));
+                ? "Снято %s руб".formatted(value)
+                : "Положено %s руб".formatted(value));
         return "main";
     }
 
@@ -133,15 +144,37 @@ public class MainController {
      * 2. login - логин пользователя получателя
      */
     @PostMapping("/transfer")
+    @CircuitBreaker(name = "transfer-client", fallbackMethod = "fallbackTransfer")
+    @Retry(name = "transfer-client")
     public String transfer(
             Model model,
-            @RequestParam("value") int value,
+            @RequestParam("value") BigDecimal value,
             @RequestParam("login") String login
     ) {
         TransferRequest request = new TransferRequest(value, login);
         AccountResponse response = transferClient.transfer(request);
-        fillModel(model, response, null, "Успешно переведено %d руб клиенту %s".formatted(value, login));
+        fillModel(model, response, null, "Успешно переведено %s руб клиенту %s".formatted(value, login));
         return "main";
+    }
+
+    private String fallbackGetAccount(Throwable t) {
+        log.error("Accounts service unavailable", t);
+        return "redirect:/account?error=service_unavailable";
+    }
+
+    private String fallbackEditAccount(Model model, String name, java.time.LocalDate birthdate, Throwable t) {
+        log.error("Accounts service unavailable for update: name='{}', birthdate={}", name, birthdate, t);
+        return "redirect:/account?error=update_failed";
+    }
+
+    private String fallbackEditCash(Model model, BigDecimal value, CashAction action, Throwable t) {
+        log.error("Cash service unavailable: value={}, action={}", value, action, t);
+        return "redirect:/account?error=cash_failed";
+    }
+
+    private String fallbackTransfer(Model model, BigDecimal value, String login, Throwable t) {
+        log.error("Transfer service unavailable: value={}, to='{}'", value, login, t);
+        return "redirect:/account?error=transfer_failed";
     }
 
     private void fillModel(Model model, AccountResponse response,

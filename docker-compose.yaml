@@ -1,6 +1,6 @@
 services:
   configuration-service:
-    image: configuration-service:0.0.1-SNAPSHOT
+    image: configuration-service:0.0.3-SNAPSHOT
     container_name: bank-configuration-service
     ports:
       - "8888:8888"
@@ -14,7 +14,7 @@ services:
       - bank-network
 
   eureka-service:
-    image: eureka-service:0.0.1-SNAPSHOT
+    image: eureka-service:0.0.3-SNAPSHOT
     container_name: bank-eureka-service
     ports:
       - "8761:8761"
@@ -33,7 +33,7 @@ services:
       - bank-network
 
   gateway-service:
-    image: gateway-service:0.0.1-SNAPSHOT
+    image: gateway-service:0.0.3-SNAPSHOT
     container_name: bank-gateway-service
     ports:
       - "9091:9091"
@@ -56,7 +56,7 @@ services:
       - bank-network
 
   accounts-service:
-    image: accounts-service:0.0.1-SNAPSHOT
+    image: accounts-service:0.0.3-SNAPSHOT
     container_name: bank-accounts-service
     ports:
       - "9092:9092"
@@ -85,7 +85,7 @@ services:
       - bank-network
 
   cash-service:
-    image: cash-service:0.0.1-SNAPSHOT
+    image: cash-service:0.0.3-SNAPSHOT
     container_name: bank-cash-service
     ports:
       - "8084:8084"
@@ -114,7 +114,7 @@ services:
       - bank-network
 
   transfer-service:
-    image: transfer-service:0.0.1-SNAPSHOT
+    image: transfer-service:0.0.3-SNAPSHOT
     container_name: bank-transfer-service
     ports:
       - "8083:8083"
@@ -143,7 +143,7 @@ services:
       - bank-network
 
   notification-service:
-    image: notification-service:0.0.1-SNAPSHOT
+    image: notification-service:0.0.3-SNAPSHOT
     container_name: bank-notification-service
     ports:
       - "8085:8085"
@@ -171,7 +171,7 @@ services:
       - bank-network
 
   frontend-service:
-    image: frontend-service:0.0.1-SNAPSHOT
+    image: frontend-service:0.0.3-SNAPSHOT
     container_name: bank-frontend-service
     ports:
       - "9090:9090"

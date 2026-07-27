@@ -17,6 +17,7 @@ import ru.yandex.practicum.cash.dto.CashAction;
 import ru.yandex.practicum.cash.dto.CashActionRequest;
 import ru.yandex.practicum.cash.service.CashService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ class CashControllerSecurityTest {
     void editCash_withoutToken_shouldReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/api/cash")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CashActionRequest(500, CashAction.PUT))))
+                        .content(objectMapper.writeValueAsString(new CashActionRequest(BigDecimal.valueOf(500), CashAction.PUT))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -61,7 +62,7 @@ class CashControllerSecurityTest {
     void editCash_withWrongRole_shouldReturnForbidden() throws Exception {
         mockMvc.perform(post("/api/cash")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CashActionRequest(500, CashAction.PUT)))
+                        .content(objectMapper.writeValueAsString(new CashActionRequest(BigDecimal.valueOf(500), CashAction.PUT)))
                         .with(authentication(tokenWithRoles("WRONG_ROLE"))))
                 .andExpect(status().isForbidden());
     }
@@ -70,7 +71,7 @@ class CashControllerSecurityTest {
     void editCash_withCorrectRole_shouldSucceed() throws Exception {
         mockMvc.perform(post("/api/cash")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CashActionRequest(500, CashAction.PUT)))
+                        .content(objectMapper.writeValueAsString(new CashActionRequest(BigDecimal.valueOf(500), CashAction.PUT)))
                         .with(authentication(tokenWithRoles("SERVICE"))))
                 .andExpect(status().isOk());
     }

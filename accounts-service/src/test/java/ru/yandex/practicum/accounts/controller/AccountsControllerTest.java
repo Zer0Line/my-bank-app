@@ -15,6 +15,8 @@ import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAmountRequest;
 import ru.yandex.practicum.accounts.service.AccountsService;
 
+import java.math.BigDecimal;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -68,7 +70,7 @@ class AccountsControllerTest {
         mockMvc.perform(patch("/api/accounts/amount")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateAmountRequest("testuser", 500, CashAction.PUT))))
+                                new UpdateAmountRequest("testuser", BigDecimal.valueOf(500), CashAction.PUT))))
                 .andExpect(status().isOk())
                 .andDo(print());
 
@@ -80,7 +82,7 @@ class AccountsControllerTest {
         mockMvc.perform(post("/api/accounts/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new TransferRequest("sender", "recipient", 200))))
+                                new TransferRequest("sender", "recipient", BigDecimal.valueOf(200)))))
                 .andExpect(status().isOk())
                 .andDo(print());
 

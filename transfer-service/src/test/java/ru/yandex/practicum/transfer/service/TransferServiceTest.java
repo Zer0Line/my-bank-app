@@ -12,6 +12,7 @@ import ru.yandex.practicum.transfer.dto.AccountResponse;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.dto.TransferRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,18 +35,18 @@ class TransferServiceTest {
     @Test
     void transfer() {
         var response = new AccountResponse(
-                "sender", "Sender User", "2000-01-01", 700,
+                "sender", "Sender User", "2000-01-01", BigDecimal.valueOf(700),
                 List.of(new AccountDto("recipient", "Recipient User"))
         );
         when(transferClient.transfer(any(TransferRequest.class)))
                 .thenReturn(response);
 
         AccountResponse result = transferService.transfer(
-                "sender", new TransferActionRequest(300, "recipient"));
+                "sender", new TransferActionRequest(BigDecimal.valueOf(300), "recipient"));
 
         assertEquals("sender", result.login());
-        assertEquals(700, result.sum());
-        verify(transferClient).transfer(new TransferRequest("sender", "recipient", 300));
+        assertEquals(0, BigDecimal.valueOf(700).compareTo(result.sum()));
+        verify(transferClient).transfer(new TransferRequest("sender", "recipient", BigDecimal.valueOf(300)));
         verify(notificationClient).saveOperations(any(List.class));
     }
 }

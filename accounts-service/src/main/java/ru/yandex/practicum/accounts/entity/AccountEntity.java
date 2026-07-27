@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -34,5 +35,5 @@ public class AccountEntity {
     private LocalDate dateOfBirth;
 
     @Column(name = "amount", nullable = false)
-    private int amount;
+    private BigDecimal amount;
 }

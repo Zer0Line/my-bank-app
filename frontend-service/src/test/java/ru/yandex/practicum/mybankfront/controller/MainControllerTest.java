@@ -15,6 +15,7 @@ import ru.yandex.practicum.mybankfront.dto.CashActionRequest;
 import ru.yandex.practicum.mybankfront.dto.TransferRequest;
 import ru.yandex.practicum.mybankfront.dto.UpdateAccountRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +48,7 @@ class MainControllerTest {
                 "login",
                 "Test User",
                 "2000-01-01",
-                1000,
+                BigDecimal.valueOf(1000),
                 List.of(new AccountDto("recipient", "Recipient"))
         );
     }
