@@ -1,0 +1,61 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankdb
+    username: bankuser
+    password: bankpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/bank-realm
+      client:
+        registration:
+          service-client:
+            client-id: transfer-service
+            client-secret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
+            authorization-grant-type: client_credentials
+        provider:
+          service-client:
+            token-uri: http://localhost:8082/realms/bank-realm/protocol/openid-connect/token
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        minimum-number-of-calls: 3
+    instances:
+      accounts-service:
+        base-config: default
+      notification-service:
+        base-config: default
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - feign.RetryableException
+    instances:
+      accounts-service:
+        base-config: default
+      notification-service:
+        base-config: default
+server:
+  port: 8083
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

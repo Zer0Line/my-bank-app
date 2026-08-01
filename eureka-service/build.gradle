@@ -1,0 +1,11 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation libs.spring.cloud.starter.config
+    implementation libs.spring.cloud.starter.netflix.eureka.server
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testImplementation libs.spring.boot.starter.test
+}
