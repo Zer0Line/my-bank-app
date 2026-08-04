@@ -8,6 +8,7 @@ import ru.yandex.practicum.transfer.dto.TransferRequest;
 
 @FeignClient(
         name = "accounts-service",
+        url = "http://accounts-service:9092",
         configuration = AccountsServiceFeignConfig.class
 )
 public interface AccountsServiceClient {

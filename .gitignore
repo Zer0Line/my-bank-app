@@ -36,3 +36,8 @@ amplicode.xml
 
 ### VS Code ###
 .vscode/
+
+### Helm ###
+helm/bank/charts/
+helm/**/charts/
+*.tgz

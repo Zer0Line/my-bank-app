@@ -46,8 +46,6 @@ subprojects {
     }
 
     def servicePorts = [
-        'configuration-service': '8888',
-        'eureka-service'       : '8761',
         'gateway-service'      : '9091',
         'accounts-service'     : '9092',
         'cash-service'         : '8084',
@@ -96,8 +94,6 @@ subprojects {
 }
 
 def serviceProjects = [
-    'configuration-service',
-    'eureka-service',
     'accounts-service',
     'cash-service',
     'transfer-service',
@@ -129,69 +125,3 @@ tasks.register('dockerBuildImages') {
     }
 }
 
-tasks.register('dockerComposeInfraUp') {
-    group = 'docker'
-    description = 'Start postgres and keycloak'
-    doLast {
-        exec {
-            workingDir rootDir
-            commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'up', '-d'
-        }
-    }
-}
-
-tasks.register('dockerComposeAppsUp') {
-    group = 'docker'
-    description = 'Start all microservices (config, eureka, gateway, accounts, cash, transfer, notification, frontend)'
-    doLast {
-        exec {
-            workingDir rootDir
-            commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'up', '-d'
-        }
-    }
-}
-
-tasks.register('dockerComposeUp') {
-    group = 'docker'
-    description = 'Start infra → apps'
-    dependsOn tasks.dockerComposeInfraUp, tasks.dockerComposeAppsUp
-    tasks.dockerComposeAppsUp.mustRunAfter tasks.dockerComposeInfraUp
-}
-
-tasks.register('dockerComposeAppsDown') {
-    group = 'docker'
-    description = 'Stop microservices'
-    doLast {
-        exec {
-            workingDir rootDir
-            commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'down'
-        }
-    }
-}
-
-tasks.register('dockerComposeInfraDown') {
-    group = 'docker'
-    description = 'Stop postgres and keycloak'
-    doLast {
-        exec {
-            workingDir rootDir
-            commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'down'
-        }
-    }
-}
-
-tasks.register('dockerComposeDown') {
-    group = 'docker'
-    description = 'Stop apps → infra'
-    dependsOn tasks.dockerComposeAppsDown, tasks.dockerComposeInfraDown
-    tasks.dockerComposeInfraDown.mustRunAfter tasks.dockerComposeAppsDown
-}
-
-tasks.register('dockerComposeDownVolumes') {
-    group = 'docker'
-    description = 'Stop all services and remove volumes'
-    doLast {
-        exec { workingDir rootDir; commandLine 'docker', 'compose', '-f', 'docker-compose.yaml', 'down' }
-        exec { workingDir rootDir; commandLine 'docker', 'compose', '-f', 'docker-compose-db_auth.yaml', 'down', '-v' }
-    }
-}
