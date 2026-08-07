@@ -1,0 +1,31 @@
+replicaCount: 1
+
+image:
+  repository: cash-service
+  tag: 0.0.3-SNAPSHOT
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: cash-service
+
+service:
+  type: ClusterIP
+  port: 8084
+
+secrets:
+  serviceClientSecret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
+
+probes:
+  path: /actuator/health
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,40 @@
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: "16"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: postgres
+
+auth:
+  database: bankdb
+  username: bankuser
+  password: bankpass
+  # existingSecret: name of an existing Secret with keys username/password/database.
+  # When set, the auto-generated Secret is not created.
+  existingSecret: ""
+
+service:
+  type: ClusterIP
+  port: 5432
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

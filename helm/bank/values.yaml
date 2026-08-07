@@ -1,0 +1,26 @@
+# Umbrella chart passes values through to its subcharts.
+# Override any value via --set bank.chartname.key=value or a custom values file.
+
+postgres:
+  enabled: true
+
+keycloak:
+  enabled: true
+
+gateway-service:
+  enabled: true
+
+accounts-service:
+  enabled: true
+
+cash-service:
+  enabled: true
+
+transfer-service:
+  enabled: true
+
+notification-service:
+  enabled: true
+
+frontend-service:
+  enabled: true

@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "frontend-service.fullname" . }}-config
+  labels:
+    {{- include "frontend-service.labels" . | nindent 4 }}
+data:
+  application.yaml: |
+    spring:
+      security:
+        oauth2:
+          client:
+            registration:
+              keycloak:
+                client-id: bank-ui
+                client-secret: ${UI_CLIENT_SECRET}
+                authorization-grant-type: authorization_code
+                scope: openid, profile
+                redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+                provider: keycloak
+            provider:
+              keycloak:
+                authorization-uri: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/auth
+                token-uri: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/token
+                jwk-set-uri: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/certs
+                user-info-uri: http://keycloak:8080/realms/bank-realm/protocol/openid-connect/userinfo
+                user-name-attribute: preferred_username
+    resilience4j:
+      circuitbreaker:
+        configs:
+          default:
+            sliding-window-size: 5
+            failure-rate-threshold: 50
+            wait-duration-in-open-state: 10s
+            permitted-number-of-calls-in-half-open-state: 3
+            minimum-number-of-calls: 3
+        instances:
+          accounts-client:
+            base-config: default
+          transfer-client:
+            base-config: default
+          cash-client:
+            base-config: default
+      retry:
+        configs:
+          default:
+            max-attempts: 3
+            wait-duration: 500ms
+            retry-exceptions:
+              - org.springframework.web.client.ResourceAccessException
+              - java.net.ConnectException
+              - java.net.SocketTimeoutException
+              - feign.RetryableException
+        instances:
+          accounts-client:
+            base-config: default
+          transfer-client:
+            base-config: default
+          cash-client:
+            base-config: default
+    server:
+      port: 9090
+    gateway:
+      base-url: http://gateway-service:9091
+    logging:
+      level:
+        ru.yandex.practicum.mybankfront.client: DEBUG

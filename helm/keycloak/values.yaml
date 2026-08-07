@@ -1,0 +1,47 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/keycloak/keycloak
+  tag: "24.0"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: keycloak
+
+service:
+  type: ClusterIP
+  port: 8080
+
+auth:
+  adminUser: admin
+  adminPassword: admin
+
+db:
+  host: postgres
+  port: 5432
+  database: bankdb
+  # Reuses the Secret created by the postgres subchart.
+  existingSecret: postgres-credentials
+  usernameKey: username
+  passwordKey: password
+
+hostname:
+  # External URL used by Keycloak when issuing redirect URIs.
+  url: http://keycloak:8080
+
+realmImport:
+  enabled: true
+  fileName: bank-realm.json
+  mountPath: /opt/keycloak/data/import
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2
+    memory: 2Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

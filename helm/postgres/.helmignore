@@ -1,0 +1,5 @@
+charts/
+*.tgz
+.git/
+.gitignore
+values-dev.yaml
