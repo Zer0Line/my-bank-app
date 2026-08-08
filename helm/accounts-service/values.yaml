@@ -5,11 +5,9 @@ image:
   tag: 0.0.3-SNAPSHOT
   pullPolicy: IfNotPresent
 
-nameOverride: ""
 fullnameOverride: accounts-service
 
 service:
-  type: ClusterIP
   port: 9092
 
 secrets:
@@ -25,7 +23,3 @@ resources:
   limits:
     cpu: 1
     memory: 1Gi
-
-nodeSelector: {}
-tolerations: []
-affinity: {}

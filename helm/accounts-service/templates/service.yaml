@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "accounts-service.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   selector:
     {{- include "accounts-service.selectorLabels" . | nindent 4 }}
   ports:

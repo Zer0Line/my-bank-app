@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "notification-service.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   selector:
     {{- include "notification-service.selectorLabels" . | nindent 4 }}
   ports:

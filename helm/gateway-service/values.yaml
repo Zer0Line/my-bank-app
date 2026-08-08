@@ -5,11 +5,9 @@ image:
   tag: 0.0.3-SNAPSHOT
   pullPolicy: IfNotPresent
 
-nameOverride: ""
 fullnameOverride: gateway-service
 
 service:
-  type: ClusterIP
   port: 9091
 
 probes:
@@ -22,7 +20,3 @@ resources:
   limits:
     cpu: 1
     memory: 1Gi
-
-nodeSelector: {}
-tolerations: []
-affinity: {}

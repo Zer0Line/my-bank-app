@@ -1,6 +1,6 @@
 apiVersion: v2
 name: bank
-description: Umbrella Helm chart for my-bank-app. Combines PostgreSQL (StatefulSet), Keycloak and all microservices as subcharts.
+description: Umbrella Helm chart for my-bank-app. Combines PostgreSQL (StatefulSet) and backend microservices as subcharts.
 type: application
 version: 0.1.0
 appVersion: 0.0.3-SNAPSHOT
@@ -10,10 +10,6 @@ dependencies:
     version: 0.1.0
     repository: file://../postgres
     condition: postgres.enabled
-  - name: keycloak
-    version: 0.1.0
-    repository: file://../keycloak
-    condition: keycloak.enabled
   - name: gateway-service
     version: 0.1.0
     repository: file://../gateway-service
@@ -34,7 +30,3 @@ dependencies:
     version: 0.1.0
     repository: file://../notification-service
     condition: notification-service.enabled
-  - name: frontend-service
-    version: 0.1.0
-    repository: file://../frontend-service
-    condition: frontend-service.enabled

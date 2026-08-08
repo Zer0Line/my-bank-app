@@ -1,10 +1,7 @@
-# Umbrella chart passes values through to its subcharts.
-# Override any value via --set bank.chartname.key=value or a custom values file.
+# Umbrella-chart пробрасывает значения в свои подчарты.
+# Любое значение можно переопределить через --set bank.chartname.key=value или свой values-файл.
 
 postgres:
-  enabled: true
-
-keycloak:
   enabled: true
 
 gateway-service:
@@ -22,5 +19,9 @@ transfer-service:
 notification-service:
   enabled: true
 
-frontend-service:
-  enabled: true
+# Keycloak и frontend-service запускаются через docker-compose на хосте, а не в Kubernetes.
+# externalKeycloak.host — адрес хост-машины с точки зрения подов Kubernetes
+# (docker bridge gateway сети minikube). Посмотреть можно так: minikube ssh "ip route"
+externalKeycloak:
+  host: 192.168.49.1
+  port: 8082

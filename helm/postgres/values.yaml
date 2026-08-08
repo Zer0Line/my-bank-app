@@ -5,19 +5,17 @@ image:
   tag: "16"
   pullPolicy: IfNotPresent
 
-nameOverride: ""
 fullnameOverride: postgres
 
 auth:
   database: bankdb
   username: bankuser
   password: bankpass
-  # existingSecret: name of an existing Secret with keys username/password/database.
-  # When set, the auto-generated Secret is not created.
+  # existingSecret: имя существующего Secret с ключами username/password/database.
+  # Если задан, автоматически сгенерированный Secret не создаётся.
   existingSecret: ""
 
 service:
-  type: ClusterIP
   port: 5432
 
 persistence:
@@ -34,7 +32,3 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
-nodeSelector: {}
-tolerations: []
-affinity: {}

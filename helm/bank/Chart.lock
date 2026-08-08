@@ -2,9 +2,6 @@ dependencies:
 - name: postgres
   repository: file://../postgres
   version: 0.1.0
-- name: keycloak
-  repository: file://../keycloak
-  version: 0.1.0
 - name: gateway-service
   repository: file://../gateway-service
   version: 0.1.0
@@ -20,8 +17,5 @@ dependencies:
 - name: notification-service
   repository: file://../notification-service
   version: 0.1.0
-- name: frontend-service
-  repository: file://../frontend-service
-  version: 0.1.0
-digest: sha256:5445eb8241f122959b3f0e62a89617460bda322fd772376b1ea2ff8515be7d95
-generated: "2026-08-02T18:17:44.007054109+03:00"
+digest: sha256:ec1c7f9e17b790fdb450afbdbcb2c1d2b37f1d972a05827ecf95f272f0472efd
+generated: "2026-08-07T22:08:45.442531092+03:00"

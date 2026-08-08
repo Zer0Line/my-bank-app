@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "cash-service.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   selector:
     {{- include "cash-service.selectorLabels" . | nindent 4 }}
   ports:

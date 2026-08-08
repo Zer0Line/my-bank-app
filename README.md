@@ -4,8 +4,6 @@ Training project. Spring Boot микросервисное приложение 
 
 | Сервис | Порт | Назначение |
 |---|---|---|
-| **configuration-service** | 8888 | Config-сервер (Spring Cloud Config) |
-| **eureka-service** | 8761 | Service Discovery (Eureka) |
 | **gateway-service** | 9091 | API Gateway (Spring Cloud Gateway) с OAuth2 JWT |
 | **accounts-service** | 9092 | Управление счетами |
 | **cash-service** | 8084 | Кассовые операции |
@@ -15,6 +13,22 @@ Training project. Spring Boot микросервисное приложение 
 
 Для аутентификации используется **Keycloak 24.0**.
 Для хранения данных — **PostgreSQL 16**.
+
+**Архитектура:**
+- Для развертываня используется minikube и Helm. В кластере k8s разворачиваются:
+PostgreSQL и backend-сервисы (gateway, accounts, cash, transfer, notification).
+- Через docker-compose** запускаются: **keycloak** и **frontend-service**.
+- Для доступа по сети через localhost(без привязки к IP) к сервисам : frontend `:9090`, Keycloak `:8082`,
+gateway `:9091` и PostgreSQL `:5432`нужно использовать **port-forward**. Для этого запустить скрипт
+  scripts/start-port-forwards.sh  
+- В конфигах приложений нет IP — используются DNS-имена: `keycloak` и `postgres`
+(in-cluster Services) для подов и `localhost` для контейнеров на хосте.
+- Backend валидируют JWT **по подписи** (`jwk-set-uri` через Service `keycloak`), т.к. issuer
+(`KC_HOSTNAME_URL=http://localhost:8082`) недоступен из подов.
+- Конфигурация микросервисов хранится в Kubernetes-объектах **ConfigMap** и **Secret**
+в Helm-чартах (`helm/<service>/templates/configmap.yaml` и `secret.yaml`).
+
+- Сервисы общаются напрямую через Kubernetes Services (ClusterIP / DNS-имена).
 
 ---
 
@@ -35,8 +49,6 @@ Training project. Spring Boot микросервисное приложение 
 Образы собираются через Dockerfile для каждого сервиса:
 
 ```bash
-./gradlew :configuration-service:dockerBuildImage
-./gradlew :eureka-service:dockerBuildImage
 ./gradlew :gateway-service:dockerBuildImage
 ./gradlew :accounts-service:dockerBuildImage
 ./gradlew :cash-service:dockerBuildImage
@@ -51,67 +63,86 @@ Training project. Spring Boot микросервисное приложение 
 ./gradlew dockerBuildImages
 ```
 
-### Запуск
+> Задача `dockerBuildImage` **пропускает** сборку, если образ с таким тегом уже
+> существует. Для пересборки из актуального исходного кода сначала нужно удалить старые образы:
+> `docker rmi <service>:0.0.3-SNAPSHOT`.
 
-#### 1. Инфраструктура (PostgreSQL + Keycloak)
+### Запуск через minikube и Helm
 
-```bash
-./gradlew dockerComposeInfraUp
-```
-
-При первом запуске Keycloak автоматически импортирует realm `bank-realm` из файла `keycloak/bank-realm.json`.
-
-#### 2. Настройка Keycloak
-
-Зайти в админку http://localhost:8082, (admin / admin).
-Realm `bank-realm` уже должен быть импортирован — в нём создан клиент **bank-ui** и пользователь **bankuser**.
-
-> При сбросе томов PostgreSQL (`docker compose -f docker-compose-db_auth.yaml down -v`) Keycloak пересоздаёт realm из файла импорта — пароли не должны потеряться.
-
-#### 3. Микросервисы проекта
+#### 1. Сборка Docker-образов
 
 ```bash
-./gradlew dockerComposeAppsUp
+# Удаляем существующие, если остались от предыдущих запусков
+docker rmi gateway-service:0.0.3-SNAPSHOT accounts-service:0.0.3-SNAPSHOT \
+  cash-service:0.0.3-SNAPSHOT transfer-service:0.0.3-SNAPSHOT \
+  notification-service:0.0.3-SNAPSHOT frontend-service:0.0.3-SNAPSHOT
+./gradlew dockerBuildImages
 ```
 
-### Можно попробовать запустить всё сразу
+Если minikube с драйвером `docker` использует собственный docker-демон внутри ноды, то
+`minikube image load <tag>` не находит образы в хостовом демоне. Загружаем следующим образом:
 
 ```bash
-./gradlew dockerBuildImages dockerComposeUp
+for img in accounts-service cash-service transfer-service notification-service gateway-service; do
+  docker save $img:0.0.3-SNAPSHOT | minikube image load -
+done
 ```
 
-### Остановка
+После загрузки новых образов рестартуем поды:
 
 ```bash
-# Остановить микросервисы
-./gradlew dockerComposeAppsDown
-
-# Остановить инфраструктуру
-./gradlew dockerComposeInfraDown
-
-# Остановить всё
-./gradlew dockerComposeDown
-
-# Остановить всё и удалить тома PostgreSQL
-./gradlew dockerComposeDownVolumes
+kubectl -n bank rollout restart deploy gateway-service accounts-service \
+  cash-service transfer-service notification-service
 ```
 
-### Запуск только контейнеров (без пересборки)
+#### 2. Установка Helm-чартов
 
 ```bash
-# Инфраструктура
-docker compose -f docker-compose-db_auth.yaml up -d
-
-# Микросервисы
-docker compose -f docker-compose.yaml up -d
+helm dependency build helm/bank
+helm install bank helm/bank -n bank --create-namespace
 ```
 
-Остановка:
+#### 3. Запуск Keycloak и frontend на хосте
+
+Сначала настроим port-forward для связи с k8s, затем запустим frontend и keycloak
 
 ```bash
-docker compose -f docker-compose.yaml down
-docker compose -f docker-compose-db_auth.yaml down
+bash scripts/start-port-forwards.sh   # opens gateway (9091) and PostgreSQL (5432) on localhost
+docker compose up -d
 ```
+
+- Keycloak поднимается на `http://localhost:8082` и при первом запуске
+  импортирует realm `bank-realm` из `keycloak/bank-realm.json`.
+- Frontend поднимается на `http://localhost:9090`.
+
+> Если realm уже есть в БД (например, с прошлого запуска), импорт пропускается.
+> Тогда правки в `bank-realm.json` нужно применить вручную в админке Keycloak
+> (или удалить схему Keycloak из PostgreSQL).
+
+#### 4. Доступ к сервисам
+
+- **Frontend (UI):** http://localhost:9090
+- **Keycloak (admin):** http://localhost:8082 (admin / admin)
+- **Gateway:** http://localhost:9091 (через `kubectl port-forward`)
+- **PostgreSQL:** `localhost:5432` (через `kubectl port-forward`)
+
+> Порт-форварды (`kubectl port-forward`) обрываются при пересоздании подов — после
+> рестарта gateway нужно заново сделать port-forward: `bash scripts/start-port-forwards.sh`.
+
+> Есть привязка к IP — адрес хоста, как его видят поды
+> (`minikube ssh "ip route" | grep default`, по умолчанию `192.168.49.1`),
+> в `helm/bank/values.yaml` → `externalKeycloak.host` (Service/Endpoints `keycloak`).
+
+Realm `bank-realm` должен содержать клиент **bank-ui** и пользователя **bankuser**.
+
+### Удаление
+
+```bash
+docker compose down
+helm uninstall bank -n bank
+```
+
+> Данные PostgreSQL хранятся в PVC (по умолчанию `local-path`).
 
 ### Авторизация
 
@@ -122,10 +153,16 @@ docker compose -f docker-compose-db_auth.yaml down
 
 Данные счетов других пользователей можно добавить в `accounts-service/src/main/resources/data.sql`.
 
-### Конфигурация контейнеров
+### Конфигурация
 
-- Инфраструктура: `docker-compose-db_auth.yaml`
-- Микросервисы: `docker-compose.yml`
+- PostgreSQL и backend-микросервисы: Helm-чарты в `helm/`
+- Keycloak и frontend-service: `docker-compose.yml` (конфиг фронтенда — `docker/frontend/application.yaml`)
+- Конфиги микросервисов: ConfigMap `<service>-config` + Secret `<service>-secrets`
+- Секреты БД: Secret `postgres-credentials`
+- Keycloak для сервисов Kubernetes: Service/Endpoints `keycloak` → хост (см. `helm/bank/templates/external-keycloak.yaml`)
+- Валидация JWT в backend: `jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs`
+  (issuer у Keycloak — `http://localhost:8082`, поэтому токены проверяются по подписи)
+- Порт-форварды для доступа с хоста: `scripts/start-port-forwards.sh`
 - Docker-образ: `Dockerfile`
 
 ### Экспорт realm Keycloak
@@ -133,7 +170,7 @@ docker compose -f docker-compose-db_auth.yaml down
 После изменения настроек realm (пользователи, клиенты, роли) можно сделать экспорт конфигурации:
 
 ```bash
-docker exec bank-keycloak /opt/keycloak/bin/kc.sh export \
+docker exec my-bank-app-keycloak-1 /opt/keycloak/bin/kc.sh export \
   --realm bank-realm --dir /tmp/ --users realm_file
-docker cp bank-keycloak:/tmp/bank-realm-realm.json keycloak/bank-realm.json
+docker cp my-bank-app-keycloak-1:/tmp/bank-realm-realm.json keycloak/bank-realm.json
 ```
