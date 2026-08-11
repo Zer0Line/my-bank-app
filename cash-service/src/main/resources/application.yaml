@@ -1,3 +1,9 @@
 spring:
   application:
     name: cash-service
+
+clients:
+  accounts-service:
+    url: http://accounts-service:9092
+  notification-service:
+    url: http://notification-service:8085

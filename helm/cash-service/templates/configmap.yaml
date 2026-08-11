@@ -62,5 +62,10 @@ data:
             base-config: default
           notification-service:
             base-config: default
+    clients:
+      accounts-service:
+        url: http://accounts-service:9092
+      notification-service:
+        url: http://notification-service:8085
     server:
       port: 8084

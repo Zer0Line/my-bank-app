@@ -17,13 +17,20 @@ spec:
       targetPort: {{ .Values.externalKeycloak.port }}
       protocol: TCP
 ---
-apiVersion: v1
-kind: Endpoints
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
 metadata:
-  name: keycloak
-subsets:
+  name: keycloak-external
+  labels:
+    kubernetes.io/service-name: keycloak
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: Helm
+addressType: IPv4
+endpoints:
   - addresses:
-      - ip: {{ .Values.externalKeycloak.host | quote }}
-    ports:
-      - name: http
-        port: {{ .Values.externalKeycloak.port }}
+      - {{ .Values.externalKeycloak.host | quote }}
+ports:
+  - name: http
+    port: {{ .Values.externalKeycloak.port }}
+    protocol: TCP

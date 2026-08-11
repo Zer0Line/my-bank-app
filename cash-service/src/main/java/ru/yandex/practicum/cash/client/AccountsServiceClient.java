@@ -8,7 +8,7 @@ import ru.yandex.practicum.cash.dto.UpdateAmountRequest;
 
 @FeignClient(
         name = "accounts-service",
-        url = "http://accounts-service:9092",
+        url = "${clients.accounts-service.url}",
         configuration = AccountsServiceFeignConfig.class
 )
 public interface AccountsServiceClient {

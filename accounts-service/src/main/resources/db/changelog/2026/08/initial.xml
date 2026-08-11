@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd" objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet author="bank" id="1afeef2c-166a-4026-89b7-c745f21b4d3e">
+        <sql>CREATE SCHEMA IF NOT EXISTS accounts</sql>
+    </changeSet>
+    <changeSet author="bank" id="bd698ba1-d7b7-4978-8c78-7ae58272a578">
+        <createTable schemaName="accounts" tableName="accounts">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_accounts"/>
+            </column>
+            <column name="login" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="surename" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_of_birth" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(15, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="bank" id="9cfff0c1-c534-4031-8585-99c13a5fa7f5">
+        <addUniqueConstraint columnNames="login" constraintName="uk_accounts_login" schemaName="accounts" tableName="accounts"/>
+    </changeSet>
+</databaseChangeLog>
