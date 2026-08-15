@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AccountsController.class)
+@WebMvcTest(value = AccountsController.class, properties = "clients.notification-service.url=http://localhost:8085")
 @Import({SecurityConfig.class, TestSecurityConfig.class})
 class AccountsControllerSecurityTest {
 
@@ -87,6 +87,7 @@ class AccountsControllerSecurityTest {
     @Test
     void updateAmount_withCorrectRole_shouldSucceed() throws Exception {
         mockMvc.perform(patch("/api/accounts/amount")
+                        .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new UpdateAmountRequest("testuser", BigDecimal.valueOf(500), CashAction.PUT)))
@@ -97,6 +98,7 @@ class AccountsControllerSecurityTest {
     @Test
     void transfer_withCorrectRole_shouldSucceed() throws Exception {
         mockMvc.perform(post("/api/accounts/transfer")
+                        .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new TransferRequest("sender", "recipient", BigDecimal.valueOf(200))))

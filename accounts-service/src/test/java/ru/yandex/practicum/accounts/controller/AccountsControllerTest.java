@@ -69,6 +69,7 @@ class AccountsControllerTest {
     @Test
     void updateAmount() throws Exception {
         mockMvc.perform(patch("/api/accounts/amount")
+                        .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new UpdateAmountRequest("testuser", BigDecimal.valueOf(500), CashAction.PUT))))
@@ -81,6 +82,7 @@ class AccountsControllerTest {
     @Test
     void transfer() throws Exception {
         mockMvc.perform(post("/api/accounts/transfer")
+                        .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new TransferRequest("sender", "recipient", BigDecimal.valueOf(200)))))

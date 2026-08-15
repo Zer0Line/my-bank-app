@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "gateway-service.fullname" . }}-health-test"
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # Pod запускается только через `helm test` (см. helm.sh/hook: test),
+    # при обычной установке/обновлении чарта он не создаётся.
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+    - name: wget
+      image: busybox:1.36
+      imagePullPolicy: IfNotPresent
+      command: ['wget']
+      # DNS-имя Service в Kubernetes, распределяющего нагрузку между подами деплоймента.
+      args:
+        - 'http://{{ include "gateway-service.fullname" . }}:{{ .Values.service.port }}{{ .Values.probes.path }}'
+  restartPolicy: Never

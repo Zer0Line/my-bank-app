@@ -81,6 +81,19 @@ helm install bank helm/bank -n bank --create-namespace \
   --set postgres.persistence.size=2Gi
 ```
 
+## Тесты
+
+```bash
+helm dependency build helm/bank
+helm install bank helm/bank -n bank --create-namespace  # или helm upgrade
+helm test bank -n bank
+```
+
+Тесты — отдельный Pod (см. `helm/*/templates/tests/`), создаваемый только командой
+`helm test <release>` (аннотация `"helm.sh/hook": test`). Для каждого сервиса делается
+запрос `wget` на `/<service>:<port>/actuator/health`. При успехе контейнер завершается
+с кодом 0, при провале — `helm test` упадёт с ошибкой.
+
 ## Удаление
 
 ```bash

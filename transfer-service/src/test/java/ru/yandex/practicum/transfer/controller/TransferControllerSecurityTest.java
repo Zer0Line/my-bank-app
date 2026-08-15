@@ -25,7 +25,10 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(TransferController.class)
+@WebMvcTest(value = TransferController.class, properties = {
+        "clients.notification-service.url=http://localhost:8085",
+        "clients.accounts-service.url=http://localhost:9092"
+})
 @Import({SecurityConfig.class, TestSecurityConfig.class})
 class TransferControllerSecurityTest {
 
