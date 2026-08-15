@@ -13,6 +13,8 @@ import ru.yandex.practicum.cash.dto.AccountResponse;
 import ru.yandex.practicum.cash.dto.CashActionRequest;
 import ru.yandex.practicum.cash.service.CashService;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class CashController {
         log.info("Incoming request: POST /api/cash with body: {}", request);
 
         String login = extractLogin();
-        return cashService.processCashAction(login, request.value(), request.action());
+        return cashService.processCashAction(login, request.value(), request.action(), UUID.randomUUID().toString());
     }
 
     private String extractLogin() {

@@ -3,6 +3,7 @@ package ru.yandex.practicum.cash.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import ru.yandex.practicum.cash.dto.AccountResponse;
 import ru.yandex.practicum.cash.dto.UpdateAmountRequest;
 
@@ -14,5 +15,6 @@ import ru.yandex.practicum.cash.dto.UpdateAmountRequest;
 public interface AccountsServiceClient {
 
     @PatchMapping("/api/accounts/amount")
-    AccountResponse updateAmount(@RequestBody UpdateAmountRequest request);
+    AccountResponse updateAmount(@RequestBody UpdateAmountRequest request,
+                                 @RequestHeader("Idempotency-Key") String idempotencyKey);
 }

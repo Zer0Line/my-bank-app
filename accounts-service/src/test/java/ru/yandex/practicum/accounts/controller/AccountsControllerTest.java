@@ -18,6 +18,7 @@ import ru.yandex.practicum.accounts.service.AccountsService;
 import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -74,7 +75,7 @@ class AccountsControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(accountsService).updateAmount(any(UpdateAmountRequest.class));
+        verify(accountsService).updateAmount(any(UpdateAmountRequest.class), nullable(String.class));
     }
 
     @Test
@@ -86,6 +87,6 @@ class AccountsControllerTest {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(accountsService).transfer(any(TransferRequest.class));
+        verify(accountsService).transfer(any(TransferRequest.class), nullable(String.class));
     }
 }

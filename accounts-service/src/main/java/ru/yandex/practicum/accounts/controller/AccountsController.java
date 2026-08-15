@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.accounts.dto.AccountResponse;
@@ -36,14 +37,16 @@ public class AccountsController {
     }
 
     @PatchMapping("/amount")
-    public AccountResponse updateAmount(@RequestBody UpdateAmountRequest request) {
-        log.info("Incoming request: PATCH /api/accounts/amount with body: {}", request);
-        return accountsService.updateAmount(request);
+    public AccountResponse updateAmount(@RequestBody UpdateAmountRequest request,
+                                        @RequestHeader(value = "Idempotency-Key") String idempotencyKey) {
+        log.info("Incoming request: PATCH /api/accounts/amount with body: {}, idempotencyKey: {}", request, idempotencyKey);
+        return accountsService.updateAmount(request, idempotencyKey);
     }
 
     @PostMapping("/transfer")
-    public AccountResponse transfer(@RequestBody TransferRequest request) {
-        log.info("Incoming request: POST /api/accounts/transfer with body: {}", request);
-        return accountsService.transfer(request);
+    public AccountResponse transfer(@RequestBody TransferRequest request,
+                                    @RequestHeader(value = "Idempotency-Key") String idempotencyKey) {
+        log.info("Incoming request: POST /api/accounts/transfer with body: {}, idempotencyKey: {}", request, idempotencyKey);
+        return accountsService.transfer(request, idempotencyKey);
     }
 }

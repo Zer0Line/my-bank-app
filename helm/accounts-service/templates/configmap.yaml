@@ -60,6 +60,10 @@ data:
         instances:
           notification-service:
             base-config: default
+    app:
+      outbox:
+        poll-interval: 5000
+        batch-size: 100
     clients:
       notification-service:
         url: http://notification-service:8085
