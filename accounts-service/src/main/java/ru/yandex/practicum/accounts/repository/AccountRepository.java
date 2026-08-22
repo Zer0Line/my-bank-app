@@ -8,7 +8,7 @@ import ru.yandex.practicum.accounts.entity.AccountEntity;
 import java.util.List;
 import java.util.Optional;
 
-public interface AccountRepository extends JpaRepository<AccountEntity, String> {
+public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
     Optional<AccountEntity> findByLogin(String login);
 

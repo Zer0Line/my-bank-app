@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd" objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet author="bank" id="f0d7a3c1-6b3e-4f59-9d2b-3c5a8e7a1b2c">
+        <createTable schemaName="accounts" tableName="idempotency_keys">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_idempotency_keys"/>
+            </column>
+            <column name="idempotency_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="request_digest" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="response_json" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="bank" id="91e2c4d5-8a7f-4b3c-9e6d-1f2a4b5c6d7e">
+        <addUniqueConstraint columnNames="idempotency_key" constraintName="uk_idempotency_keys_key"
+                             schemaName="accounts" tableName="idempotency_keys"/>
+    </changeSet>
+</databaseChangeLog>

@@ -9,6 +9,7 @@ import java.util.List;
 
 @FeignClient(
         name = "notification-service",
+        url = "${clients.notification-service.url}",
         configuration = NotificationServiceFeignConfig.class
 )
 public interface NotificationServiceClient {

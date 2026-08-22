@@ -1,0 +1,17 @@
+Вы установили {{ .Chart.Name }}.
+
+PostgreSQL (StatefulSet) и все backend-микросервисы развёрнуты в namespace "{{ .Release.Namespace }}".
+
+Доступ (namespace {{ .Release.Namespace }}):
+  - PostgreSQL:  postgres:5432          (StatefulSet postgres-0, данные в PVC data-postgres-0)
+  - Gateway:     kubectl port-forward svc/gateway-service 9091:9091 -n {{ .Release.Namespace }}
+
+На хосте (docker-compose):
+  - Keycloak:  http://localhost:8082  (admin / admin)
+  - Frontend:  http://localhost:9090
+
+Доступ к gateway и PostgreSQL на localhost для контейнеров на хосте:
+  bash scripts/start-port-forwards.sh
+
+Если установка из свежего клона, сначала выполнить `helm dependency build ./helm/bank`,
+чтобы подтянуть подчарты в helm/bank/charts/.

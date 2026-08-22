@@ -6,14 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.transfer.client.AccountsServiceClient;
-import ru.yandex.practicum.transfer.client.NotificationServiceClient;
 import ru.yandex.practicum.transfer.dto.AccountResponse;
-import ru.yandex.practicum.transfer.dto.OperationRequest;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.dto.TransferRequest;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -21,11 +16,11 @@ import java.util.List;
 public class TransferService {
 
     private final AccountsServiceClient accountsServiceClient;
-    private final NotificationServiceClient notificationClient;
+    private final OperationNotifierService operationNotifierService;
 
     @CircuitBreaker(name = "accounts-service", fallbackMethod = "fallbackAccountsService")
     @Retry(name = "accounts-service")
-    public AccountResponse transfer(String senderLogin, TransferActionRequest actionRequest) {
+    public AccountResponse transfer(String senderLogin, TransferActionRequest actionRequest, String idempotencyKey) {
         var request = new TransferRequest(
                 senderLogin,
                 actionRequest.login(),
@@ -35,25 +30,12 @@ public class TransferService {
         log.info("Calling accounts-service to transfer from '{}' to '{}', amount={}",
                 senderLogin, actionRequest.login(), actionRequest.value());
 
-        AccountResponse response = accountsServiceClient.transfer(request);
+        operationNotifierService.notifyOperationStarted(senderLogin, actionRequest.login(), actionRequest.value());
 
-        notify(senderLogin, actionRequest);
-
-        return response;
+        return accountsServiceClient.transfer(request, idempotencyKey);
     }
 
-    @CircuitBreaker(name = "notification-service")
-    @Retry(name = "notification-service")
-    public void notify(String senderLogin, TransferActionRequest actionRequest) {
-        notificationClient.saveOperations(List.of(
-                new OperationRequest(senderLogin, "TRANSFER_SENT",
-                        "Transfer to " + actionRequest.login(), actionRequest.value()),
-                new OperationRequest(actionRequest.login(), "TRANSFER_RECEIVED",
-                        "Transfer from " + senderLogin, actionRequest.value())
-        ));
-    }
-
-    private AccountResponse fallbackAccountsService(String senderLogin, TransferActionRequest actionRequest, Throwable t) {
+    private AccountResponse fallbackAccountsService(String senderLogin, TransferActionRequest actionRequest, String idempotencyKey, Throwable t) {
         log.error("Accounts-service unavailable for transfer from '{}' to '{}', amount={}", senderLogin, actionRequest.login(), actionRequest.value(), t);
         throw new RuntimeException("Transfer failed: accounts service is unavailable", t);
     }

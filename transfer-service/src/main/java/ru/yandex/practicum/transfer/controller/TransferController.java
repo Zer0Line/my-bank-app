@@ -13,6 +13,8 @@ import ru.yandex.practicum.transfer.dto.AccountResponse;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.service.TransferService;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class TransferController {
         log.info("Incoming request: POST /api/transfers with body: {}", request);
 
         String login = extractLogin();
-        return transferService.transfer(login, request);
+        return transferService.transfer(login, request, UUID.randomUUID().toString());
     }
 
     private String extractLogin() {

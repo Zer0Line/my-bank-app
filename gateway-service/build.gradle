@@ -5,8 +5,6 @@ plugins {
 dependencies {
     implementation libs.spring.cloud.starter.gateway
     implementation libs.spring.cloud.gateway.server.webflux
-    implementation libs.spring.cloud.starter.config
-    implementation libs.spring.cloud.starter.netflix.eureka.client
     implementation libs.spring.boot.starter.oauth2.client
     implementation libs.spring.boot.starter.oauth2.resource.server
     implementation libs.spring.boot.starter.actuator

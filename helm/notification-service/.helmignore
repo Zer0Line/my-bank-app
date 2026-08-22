@@ -1,0 +1,4 @@
+charts/
+*.tgz
+.git/
+.gitignore

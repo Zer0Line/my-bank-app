@@ -12,8 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.server.ResponseStatusException;
-import ru.yandex.practicum.accounts.client.NotificationServiceClient;
 import ru.yandex.practicum.accounts.dto.AccountDto;
+import ru.yandex.practicum.accounts.dto.AccountResponse;
 import ru.yandex.practicum.accounts.dto.CashAction;
 import ru.yandex.practicum.accounts.dto.TransferRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
@@ -28,9 +28,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,7 +46,10 @@ class AccountsServiceTest {
     private AccountMapper accountMapper;
 
     @Mock
-    private NotificationServiceClient notificationClient;
+    private OperationNotifierService operationNotifierService;
+
+    @Mock
+    private IdempotencyService idempotencyService;
 
     @InjectMocks
     private AccountsService accountsService;
@@ -115,8 +120,7 @@ class AccountsServiceTest {
         assertEquals("New", senderEntity.getSurename());
         assertEquals("Name", senderEntity.getName());
         assertEquals(LocalDate.of(2025, 12, 1), senderEntity.getDateOfBirth());
-        verify(notificationClient).saveOperation(argThat(op ->
-                "testuser".equals(op.login()) && "ACCOUNT_UPDATE".equals(op.type())));
+        verify(operationNotifierService).notifyAccountUpdate("testuser");
     }
 
     @Test
@@ -125,13 +129,12 @@ class AccountsServiceTest {
         when(accountRepository.save(any(AccountEntity.class))).thenReturn(senderEntity);
         when(accountRepository.findAllByLoginIsNot("testuser")).thenReturn(List.of());
 
-        accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(300), CashAction.PUT));
+        accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(300), CashAction.PUT), null);
 
         assertEquals(0, BigDecimal.valueOf(1300).compareTo(senderEntity.getAmount()));
         verify(accountRepository).save(accountCaptor.capture());
         assertEquals(0, BigDecimal.valueOf(1300).compareTo(accountCaptor.getValue().getAmount()));
-        verify(notificationClient).saveOperation(argThat(op ->
-                "CASH_PUT".equals(op.type()) && 0 == BigDecimal.valueOf(300).compareTo(op.amount())));
+        verify(operationNotifierService).notifyCashOperation("testuser", CashAction.PUT, BigDecimal.valueOf(300));
     }
 
     @Test
@@ -140,11 +143,10 @@ class AccountsServiceTest {
         when(accountRepository.save(any(AccountEntity.class))).thenReturn(senderEntity);
         when(accountRepository.findAllByLoginIsNot("testuser")).thenReturn(List.of());
 
-        accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(400), CashAction.GET));
+        accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(400), CashAction.GET), null);
 
         assertEquals(0, BigDecimal.valueOf(600).compareTo(senderEntity.getAmount()));
-        verify(notificationClient).saveOperation(argThat(op ->
-                "CASH_GET".equals(op.type()) && 0 == BigDecimal.valueOf(400).compareTo(op.amount())));
+        verify(operationNotifierService).notifyCashOperation("testuser", CashAction.GET, BigDecimal.valueOf(400));
     }
 
     @Test
@@ -152,7 +154,7 @@ class AccountsServiceTest {
         when(accountRepository.findByLogin("testuser")).thenReturn(Optional.of(senderEntity));
 
         assertThrows(ResponseStatusException.class, () ->
-                accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(2000), CashAction.GET)));
+                accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(2000), CashAction.GET), null));
     }
 
     @Test
@@ -163,14 +165,11 @@ class AccountsServiceTest {
         when(accountRepository.findAllByLoginIsNot("testuser")).thenReturn(List.of());
 
         var response = accountsService.transfer(
-                new TransferRequest("testuser", "recipient", BigDecimal.valueOf(300)));
+                new TransferRequest("testuser", "recipient", BigDecimal.valueOf(300)), null);
 
         assertEquals(0, BigDecimal.valueOf(700).compareTo(senderEntity.getAmount()));
         assertEquals(0, BigDecimal.valueOf(800).compareTo(recipientEntity.getAmount()));
-        verify(notificationClient).saveOperations(argThat(ops ->
-                ops.size() == 2 &&
-                        "TRANSFER_SENT".equals(ops.get(0).type()) &&
-                        "TRANSFER_RECEIVED".equals(ops.get(1).type())));
+        verify(operationNotifierService).notifyTransfer("testuser", "recipient", BigDecimal.valueOf(300));
     }
 
     @Test
@@ -180,7 +179,7 @@ class AccountsServiceTest {
 
         assertThrows(ResponseStatusException.class, () ->
                 accountsService.transfer(
-                        new TransferRequest("testuser", "recipient", BigDecimal.valueOf(2000))));
+                        new TransferRequest("testuser", "recipient", BigDecimal.valueOf(2000)), null));
     }
 
     @Test
@@ -189,6 +188,32 @@ class AccountsServiceTest {
 
         assertThrows(ResponseStatusException.class, () ->
                 accountsService.transfer(
-                        new TransferRequest("unknown", "recipient", BigDecimal.valueOf(100))));
+                        new TransferRequest("unknown", "recipient", BigDecimal.valueOf(100)), null));
+    }
+
+    @Test
+    void updateAmount_withIdempotencyKey_delegatesToIdempotencyService() {
+        UpdateAmountRequest request = new UpdateAmountRequest("testuser", BigDecimal.valueOf(300), CashAction.PUT);
+        AccountResponse replay = new AccountResponse("testuser", "Test User", "2000-01-01", BigDecimal.valueOf(1300), List.of());
+        when(idempotencyService.execute(eq("amount-key"), eq(request), any())).thenReturn(replay);
+
+        AccountResponse result = accountsService.updateAmount(request, "amount-key");
+
+        assertSame(replay, result);
+        verify(idempotencyService).execute(eq("amount-key"), eq(request), any());
+        verify(accountRepository, never()).save(any(AccountEntity.class));
+    }
+
+    @Test
+    void transfer_withIdempotencyKey_delegatesToIdempotencyService() {
+        TransferRequest request = new TransferRequest("testuser", "recipient", BigDecimal.valueOf(300));
+        AccountResponse replay = new AccountResponse("testuser", "Test User", "2000-01-01", BigDecimal.valueOf(700), List.of());
+        when(idempotencyService.execute(eq("transfer-key"), eq(request), any())).thenReturn(replay);
+
+        AccountResponse result = accountsService.transfer(request, "transfer-key");
+
+        assertSame(replay, result);
+        verify(idempotencyService).execute(eq("transfer-key"), eq(request), any());
+        verify(accountRepository, never()).save(any(AccountEntity.class));
     }
 }

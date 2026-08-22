@@ -1,5 +1,9 @@
 spring:
   application:
     name: cash-service
-  config:
-    import: optional:configserver:http://localhost:8888
+
+clients:
+  accounts-service:
+    url: http://accounts-service:9092
+  notification-service:
+    url: http://notification-service:8085

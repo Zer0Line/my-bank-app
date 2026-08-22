@@ -2,8 +2,12 @@ package ru.yandex.practicum.accounts.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,12 +21,17 @@ import java.time.LocalDate;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(schema = "accounts", name = "accounts")
+@Table(schema = "accounts", name = "accounts",
+        uniqueConstraints = @UniqueConstraint(name = "uk_accounts_login", columnNames = "login"))
 public class AccountEntity {
 
     @Id
-    @Column(name = "login", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     @EqualsAndHashCode.Include
+    private Long id;
+
+    @Column(name = "login", nullable = false)
     private String login;
 
     @Column(name = "name", nullable = false)
@@ -34,6 +43,10 @@ public class AccountEntity {
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
-    @Column(name = "amount", nullable = false)
+    @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
+
+    @Column(name = "version", nullable = false)
+    @Version
+    private Long version;
 }

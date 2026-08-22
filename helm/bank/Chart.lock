@@ -1,0 +1,21 @@
+dependencies:
+- name: postgres
+  repository: file://../postgres
+  version: 0.1.0
+- name: gateway-service
+  repository: file://../gateway-service
+  version: 0.1.0
+- name: accounts-service
+  repository: file://../accounts-service
+  version: 0.1.0
+- name: cash-service
+  repository: file://../cash-service
+  version: 0.1.0
+- name: transfer-service
+  repository: file://../transfer-service
+  version: 0.1.0
+- name: notification-service
+  repository: file://../notification-service
+  version: 0.1.0
+digest: sha256:ec1c7f9e17b790fdb450afbdbcb2c1d2b37f1d972a05827ecf95f272f0472efd
+generated: "2026-08-07T22:08:45.442531092+03:00"

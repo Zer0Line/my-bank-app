@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+    <changeSet author="bank" id="506cc99b-4b6e-43be-87f5-db70c8c9dfb1">
+        <insert schemaName="accounts" tableName="accounts">
+            <column name="login" value="bankuser"/>
+            <column name="name" value="John"/>
+            <column name="surename" value="Dow"/>
+            <column name="date_of_birth" value="1986-05-18"/>
+            <column name="amount" valueNumeric="100"/>
+            <column name="version" valueNumeric="0"/>
+        </insert>
+        <insert schemaName="accounts" tableName="accounts">
+            <column name="login" value="alice"/>
+            <column name="name" value="Alice"/>
+            <column name="surename" value="Smith"/>
+            <column name="date_of_birth" value="1990-03-12"/>
+            <column name="amount" valueNumeric="250"/>
+            <column name="version" valueNumeric="0"/>
+        </insert>
+        <insert schemaName="accounts" tableName="accounts">
+            <column name="login" value="bob"/>
+            <column name="name" value="Bob"/>
+            <column name="surename" value="Johnson"/>
+            <column name="date_of_birth" value="1978-11-25"/>
+            <column name="amount" valueNumeric="500"/>
+            <column name="version" valueNumeric="0"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

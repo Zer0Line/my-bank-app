@@ -1,0 +1,34 @@
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: "16"
+  pullPolicy: IfNotPresent
+
+fullnameOverride: postgres
+
+auth:
+  database: bankdb
+  username: bankuser
+  password: bankpass
+  # existingSecret: имя существующего Secret с ключами username/password/database.
+  # Если задан, автоматически сгенерированный Secret не создаётся.
+  existingSecret: ""
+
+service:
+  port: 5432
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
