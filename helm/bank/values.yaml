@@ -19,6 +19,11 @@ transfer-service:
 notification-service:
   enabled: true
 
+# Apache Kafka (KRaft): 1 нода-контроллер + 1 брокер.
+# Конфигурация — в подчарте helm/kafka
+kafka:
+  enabled: true
+
 # Keycloak и frontend-service запускаются через docker-compose на хосте, а не в Kubernetes.
 # externalKeycloak.host — адрес хост-машины с точки зрения подов Kubernetes
 # (docker bridge gateway сети minikube). Посмотреть можно так: minikube ssh "ip route"

@@ -1,0 +1,10 @@
+apiVersion: v2
+appVersion: v3.7.1
+description: Apache Kafka (KRaft) for my-bank-app. Vendored from kafka-repo/kafka 18.0.1.
+keywords:
+- kafka
+- streaming
+- kraft
+name: kafka
+type: application
+version: 0.1.0

@@ -17,5 +17,8 @@ dependencies:
 - name: notification-service
   repository: file://../notification-service
   version: 0.1.0
-digest: sha256:ec1c7f9e17b790fdb450afbdbcb2c1d2b37f1d972a05827ecf95f272f0472efd
-generated: "2026-08-07T22:08:45.442531092+03:00"
+- name: kafka
+  repository: file://../kafka
+  version: 0.1.0
+digest: sha256:53cc8df7329f9459e0ef70be7c758cc5d9b93b8f62788446fbaaaf7d05284a76
+generated: "2026-08-22T13:09:12.956052339+03:00"

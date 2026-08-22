@@ -5,5 +5,6 @@ set -euo pipefail
 
 kubectl port-forward -n bank svc/postgres 5432:5432 &
 kubectl port-forward -n bank svc/gateway-service 9091:9091 &
+kubectl port-forward -n bank svc/bank-kafka-ui 9092:8080 &
 
-echo "Port-forwards started (postgres 5432, gateway 9091)."
+echo "Port-forwards started (postgres 5432, gateway 9091, kafka-ui localhost:9092)."
