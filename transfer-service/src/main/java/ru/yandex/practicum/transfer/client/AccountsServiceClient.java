@@ -14,7 +14,7 @@ import ru.yandex.practicum.transfer.dto.TransferRequest;
 )
 public interface AccountsServiceClient {
 
-    @PostMapping("/api/accounts/transfer")
+    @PostMapping("/api/internal/accounts/transfer")
     AccountResponse transfer(@RequestBody TransferRequest request,
                              @RequestHeader("Idempotency-Key") String idempotencyKey);
 }

@@ -26,8 +26,6 @@ public class NotificationService {
         entity.setCreatedAt(LocalDateTime.now());
 
         operationRepository.save(entity);
-        log.info("Operation saved for login='{}', type='{}', amount={}",
-                request.login(), request.type(), request.amount());
     }
 
     public void saveOperations(List<OperationRequest> requests) {

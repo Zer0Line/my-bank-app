@@ -17,6 +17,7 @@ import ru.yandex.practicum.accounts.repository.OutboxEventRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,6 +51,8 @@ class OutboxRelayServiceTest {
         OutboxEventEntity event = pendingEvent(objectMapper.writeValueAsString(List.of(
                 new OperationRequest("testuser", "CASH_PUT", "Cash operation", BigDecimal.valueOf(300)))));
         when(outboxEventRepository.findPending(eq(OutboxStatus.PENDING), any(Pageable.class))).thenReturn(List.of(event));
+        when(kafkaTemplate.send(eq("account-operations"), any(OperationRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         outboxRelayService.publishPending();
 

@@ -55,6 +55,5 @@ public class OperationNotifierService {
         event.setCreatedAt(Instant.now());
 
         outboxEventRepository.save(event);
-        log.info("Outbox event saved for {} operation(s), payload={}", operations.size(), payload);
     }
 }

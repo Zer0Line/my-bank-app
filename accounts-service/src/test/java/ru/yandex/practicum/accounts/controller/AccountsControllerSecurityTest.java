@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.accounts.config.SecurityConfig;
-import ru.yandex.practicum.accounts.config.TestSecurityConfig;
 import ru.yandex.practicum.accounts.dto.CashAction;
 import ru.yandex.practicum.accounts.dto.TransferRequest;
 import ru.yandex.practicum.accounts.dto.UpdateAccountRequest;
@@ -31,8 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = AccountsController.class, properties = "clients.notification-service.url=http://localhost:8085")
-@Import({SecurityConfig.class, TestSecurityConfig.class})
+@WebMvcTest(controllers = {AccountsController.class, InternalAccountsController.class}, properties = "clients.notification-service.url=http://localhost:8085")
+@Import(SecurityConfig.class)
 class AccountsControllerSecurityTest {
 
     @Autowired
@@ -40,6 +40,9 @@ class AccountsControllerSecurityTest {
 
     @MockBean
     private AccountsService accountsService;
+
+    @MockBean
+    private JwtDecoder jwtDecoder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -70,7 +73,7 @@ class AccountsControllerSecurityTest {
     @Test
     void getAccount_withCorrectRole_shouldSucceed() throws Exception {
         mockMvc.perform(get("/api/accounts")
-                        .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
+                        .with(authentication(tokenWithRoles("USER"))))
                 .andExpect(status().isOk());
     }
 
@@ -80,13 +83,51 @@ class AccountsControllerSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new UpdateAccountRequest("New Name", "2000-01-01")))
-                        .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
+                        .with(authentication(tokenWithRoles("USER"))))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void updateAmount_withCorrectRole_shouldSucceed() throws Exception {
-        mockMvc.perform(patch("/api/accounts/amount")
+    void moneyEndpoints_areNotReachableByRegularUser() throws Exception {
+        mockMvc.perform(patch("/api/internal/accounts/amount")
+                        .header("Idempotency-Key", "test-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new UpdateAmountRequest("victim", BigDecimal.valueOf(500), CashAction.PUT)))
+                        .with(authentication(tokenWithRoles("USER"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/internal/accounts/transfer")
+                        .header("Idempotency-Key", "test-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new TransferRequest("victim", "other", BigDecimal.valueOf(200))))
+                        .with(authentication(tokenWithRoles("USER"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void internalEndpoints_areNotReachableByUserToken() throws Exception {
+        mockMvc.perform(patch("/api/internal/accounts/amount")
+                        .header("Idempotency-Key", "test-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new UpdateAmountRequest("victim", BigDecimal.valueOf(500), CashAction.PUT)))
+                        .with(authentication(tokenWithRoles("USER"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/internal/accounts/transfer")
+                        .header("Idempotency-Key", "test-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new TransferRequest("victim", "other", BigDecimal.valueOf(200))))
+                        .with(authentication(tokenWithRoles("USER"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void updateAmount_withAccountsWriteRole_shouldSucceed() throws Exception {
+        mockMvc.perform(patch("/api/internal/accounts/amount")
                         .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
@@ -96,13 +137,27 @@ class AccountsControllerSecurityTest {
     }
 
     @Test
-    void transfer_withCorrectRole_shouldSucceed() throws Exception {
-        mockMvc.perform(post("/api/accounts/transfer")
+    void transfer_withAccountsWriteRole_shouldSucceed() throws Exception {
+        mockMvc.perform(post("/api/internal/accounts/transfer")
                         .header("Idempotency-Key", "test-key")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new TransferRequest("sender", "recipient", BigDecimal.valueOf(200))))
                         .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void userEndpoints_rejectServiceToken() throws Exception {
+        mockMvc.perform(get("/api/accounts")
+                        .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new UpdateAccountRequest("New Name", "2000-01-01")))
+                        .with(authentication(tokenWithRoles("ACCOUNTS_WRITE"))))
+                .andExpect(status().isForbidden());
     }
 }

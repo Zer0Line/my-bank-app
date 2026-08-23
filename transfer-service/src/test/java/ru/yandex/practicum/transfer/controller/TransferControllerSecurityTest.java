@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.transfer.config.SecurityConfig;
-import ru.yandex.practicum.transfer.config.TestSecurityConfig;
 import ru.yandex.practicum.transfer.dto.TransferActionRequest;
 import ru.yandex.practicum.transfer.service.TransferService;
 
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "clients.notification-service.url=http://localhost:8085",
         "clients.accounts-service.url=http://localhost:9092"
 })
-@Import({SecurityConfig.class, TestSecurityConfig.class})
+@Import(SecurityConfig.class)
 class TransferControllerSecurityTest {
 
     @Autowired
@@ -37,6 +37,9 @@ class TransferControllerSecurityTest {
 
     @MockBean
     private TransferService transferService;
+
+    @MockBean
+    private JwtDecoder jwtDecoder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

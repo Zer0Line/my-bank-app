@@ -14,8 +14,10 @@ import ru.yandex.practicum.cash.dto.OperationRequest;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OperationNotifierServiceTest {
@@ -31,6 +33,9 @@ class OperationNotifierServiceTest {
 
     @Test
     void notifyOperationStarted() {
+        when(kafkaTemplate.send(eq("cash-request"), any(OperationRequest.class)))
+                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
+
         operationNotifierService.notifyOperationStarted("testuser", CashAction.PUT, BigDecimal.valueOf(500));
 
         verify(kafkaTemplate).send(eq("cash-request"), requestCaptor.capture());

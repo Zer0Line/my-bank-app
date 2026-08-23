@@ -14,9 +14,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OperationNotifierServiceTest {
@@ -32,6 +34,9 @@ class OperationNotifierServiceTest {
 
     @Test
     void notifyOperationStarted() {
+        when(kafkaTemplate.send(eq("transfer-request"), any(OperationRequest.class)))
+                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
+
         operationNotifierService.notifyOperationStarted("sender", "recipient", BigDecimal.valueOf(300));
 
         verify(kafkaTemplate, times(2)).send(eq("transfer-request"), requestCaptor.capture());

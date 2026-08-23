@@ -25,24 +25,29 @@ data:
                   predicates:
                     - Path=/api/accounts/**
                   filters:
-                    - name: RequestLogging
                     - name: JwtTokenRelay
                 - id: transfer-service
                   uri: http://transfer-service:8083
                   predicates:
                     - Path=/api/transfers/**
                   filters:
-                    - name: RequestLogging
                     - name: JwtTokenRelay
                 - id: cash-service
                   uri: http://cash-service:8084
                   predicates:
                     - Path=/api/cash/**
                   filters:
-                    - name: RequestLogging
                     - name: JwtTokenRelay
     server:
       port: 9091
+    app:
+      security:
+        oauth2:
+          resourceserver:
+            jwt:
+              jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
+              issuer-uri: http://localhost:8082/realms/bank-realm
+              audiences: bank-ui
     logging:
       level:
         ru.yandex.practicum.gateway: DEBUG

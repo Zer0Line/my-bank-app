@@ -11,7 +11,7 @@ service:
   port: 8083
 
 secrets:
-  serviceClientSecret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
+  serviceClientSecret: d7cdaeae06101fc6fcaef1fe477f424e
 
 probes:
   path: /actuator/health

@@ -7,15 +7,6 @@ metadata:
 data:
   application.yaml: |
     spring:
-      datasource:
-        url: jdbc:postgresql://postgres:5432/bankdb
-        username: ${SPRING_DATASOURCE_USERNAME}
-        password: ${SPRING_DATASOURCE_PASSWORD}
-        driver-class-name: org.postgresql.Driver
-      jpa:
-        hibernate:
-          ddl-auto: update
-        show-sql: true
       security:
         oauth2:
           resourceserver:
@@ -27,7 +18,7 @@ data:
           client:
             registration:
               service-client:
-                client-id: transfer-service
+                client-id: cash-service
                 client-secret: ${SERVICE_CLIENT_SECRET}
                 authorization-grant-type: client_credentials
             provider:
@@ -75,5 +66,13 @@ data:
     clients:
       accounts-service:
         url: http://accounts-service:9092
+    app:
+      security:
+        oauth2:
+          resourceserver:
+            jwt:
+              jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
+              issuer-uri: http://localhost:8082/realms/bank-realm
+              audiences: bank-ui
     server:
       port: 8084

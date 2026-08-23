@@ -36,7 +36,6 @@ public class TransferController {
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Jwt jwt = jwtAuth.getToken();
             String login = jwt.getClaimAsString("preferred_username");
-            log.info("Extracted login='{}' from JWT", login);
             return login;
         }
         throw new IllegalStateException("Authentication required");
