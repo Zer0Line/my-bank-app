@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,9 @@ import ru.yandex.practicum.accounts.entity.OutboxStatus;
 import ru.yandex.practicum.accounts.repository.OutboxEventRepository;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -43,8 +46,12 @@ public class OutboxRelayService {
                 List<OperationRequest> operations = objectMapper.readValue(
                         event.getPayload(), new TypeReference<>() {
                         });
+                List<CompletableFuture<SendResult<String, OperationRequest>>> futures = new ArrayList<>();
                 for (OperationRequest operation : operations) {
-                    kafkaTemplate.send(TOPIC, operation);
+                    futures.add(kafkaTemplate.send(TOPIC, operation));
+                }
+                for (CompletableFuture<SendResult<String, OperationRequest>> future : futures) {
+                    future.get();
                 }
 
                 event.setStatus(OutboxStatus.PROCESSED);

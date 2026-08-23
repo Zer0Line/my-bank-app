@@ -38,6 +38,8 @@ data:
         producer:
           key-serializer: org.apache.kafka.common.serialization.StringSerializer
           value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+          acks: all
+          retries: 10
     resilience4j:
       circuitbreaker:
         configs:
@@ -52,6 +54,7 @@ data:
             base-config: default
             ignoreExceptions:
               - ru.yandex.practicum.transfer.exception.InsufficientFundsException
+              - ru.yandex.practicum.transfer.exception.OperationNotificationException
           notification-service:
             base-config: default
       retry:
