@@ -33,6 +33,11 @@ data:
             provider:
               service-client:
                 token-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/token
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     resilience4j:
       circuitbreaker:
         configs:
@@ -45,6 +50,8 @@ data:
         instances:
           accounts-service:
             base-config: default
+            ignoreExceptions:
+              - ru.yandex.practicum.transfer.exception.InsufficientFundsException
           notification-service:
             base-config: default
       retry:
@@ -65,7 +72,5 @@ data:
     clients:
       accounts-service:
         url: http://accounts-service:9092
-      notification-service:
-        url: http://notification-service:8085
     server:
       port: 8083

@@ -35,6 +35,11 @@ data:
             provider:
               service-client:
                 token-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/token
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     resilience4j:
       circuitbreaker:
         configs:
@@ -64,8 +69,5 @@ data:
       outbox:
         poll-interval: 5000
         batch-size: 100
-    clients:
-      notification-service:
-        url: http://notification-service:8085
     server:
       port: 9092

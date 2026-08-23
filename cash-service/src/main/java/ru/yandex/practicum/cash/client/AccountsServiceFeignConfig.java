@@ -1,12 +1,15 @@
 package ru.yandex.practicum.cash.client;
 
 import feign.RequestInterceptor;
+import feign.Response;
+import feign.codec.ErrorDecoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.cash.exception.InsufficientFundsException;
 
 public class AccountsServiceFeignConfig {
 
@@ -29,6 +32,16 @@ public class AccountsServiceFeignConfig {
 
             requestTemplate.header("Authorization",
                     "Bearer " + authorizedClient.getAccessToken().getTokenValue());
+        };
+    }
+
+    @Bean
+    public ErrorDecoder accountsServiceErrorDecoder() {
+        return (methodKey, response) -> {
+            if (response.status() == HttpStatus.BAD_REQUEST.value()) {
+                return new InsufficientFundsException("Insufficient funds");
+            }
+            return feign.FeignException.errorStatus(methodKey, response);
         };
     }
 }
