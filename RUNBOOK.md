@@ -54,7 +54,7 @@ docker rmi gateway-service:0.0.3-SNAPSHOT accounts-service:0.0.3-SNAPSHOT \
 
 `minikube` (драйвер `docker`) использует собственный docker-демон внутри ноды, поэтому образы передаются через `minikube image load`:
 
-### Все сразу. Можно запустить через /scripts/add_to_minikube.sh
+### Все сразу. Можно запустить через /scripts/add_imagse_to_minikube.sh
 ```bash
 for img in accounts-service cash-service transfer-service notification-service gateway-service; do
   docker save $img:0.0.3-SNAPSHOT | minikube image load -

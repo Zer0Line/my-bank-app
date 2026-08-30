@@ -7,6 +7,8 @@ dependencies {
     implementation libs.spring.kafka
     compileOnly libs.lombok
     annotationProcessor libs.lombok
+    implementation libs.micrometer.tracing.bridge.brave
+    implementation libs.zipkin.reporter.brave
     runtimeOnly libs.postgresql
     testImplementation libs.spring.boot.starter.test
     implementation 'org.liquibase:liquibase-core'

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Использовать для доступа к gateway(localhost:9091) и PostgreSQL(localhost:5432) на localhost через kubectl port-forward.
+# Использовать для доступа к gateway(localhost:9091), PostgreSQL(localhost:5432) и Kafka UI(localhost:9092) на localhost через kubectl port-forward.
 # Убрать port-forward: pkill -f "port-forward svc/"
 set -euo pipefail
 

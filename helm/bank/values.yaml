@@ -30,3 +30,7 @@ kafka:
 externalKeycloak:
   host: 192.168.49.1
   port: 8082
+
+externalZipkin:
+  host: 192.168.49.1
+  port: 9411

@@ -13,6 +13,8 @@ dependencies {
     implementation libs.feign.hc5
     implementation libs.mapstruct
     implementation libs.spring.cloud.starter.circuitbreaker.resilience4j
+    implementation libs.micrometer.tracing.bridge.brave
+    implementation libs.zipkin.reporter.brave
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapstruct.processor

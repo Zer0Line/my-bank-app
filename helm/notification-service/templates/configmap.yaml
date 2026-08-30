@@ -37,5 +37,9 @@ data:
             spring.json.trusted.packages: "*"
             spring.json.value.default.type: ru.yandex.practicum.notification.dto.OperationRequest
             spring.json.use.type.headers: "false"
+    management:
+      tracing:
+        sampling:
+          probability: 1.0
     server:
       port: 8085

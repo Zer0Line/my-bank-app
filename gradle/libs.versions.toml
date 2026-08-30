@@ -26,6 +26,8 @@ mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.re
 lombok = { module = "org.projectlombok:lombok" }
 lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version = "0.2.0" }
 spring-cloud-starter-circuitbreaker-resilience4j = { module = "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j" }
+micrometer-tracing-bridge-brave = { module = "io.micrometer:micrometer-tracing-bridge-brave" }
+zipkin-reporter-brave = { module = "io.zipkin.reporter2:zipkin-reporter-brave", version = "3.4.0" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

@@ -69,5 +69,9 @@ data:
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
               issuer-uri: http://localhost:8082/realms/bank-realm
               audiences: accounts-service,bank-ui
+    management:
+      tracing:
+        sampling:
+          probability: 1.0
     server:
       port: 9092
