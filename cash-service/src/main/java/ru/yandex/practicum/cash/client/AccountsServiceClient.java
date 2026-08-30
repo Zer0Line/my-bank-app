@@ -14,7 +14,7 @@ import ru.yandex.practicum.cash.dto.UpdateAmountRequest;
 )
 public interface AccountsServiceClient {
 
-    @PatchMapping("/api/accounts/amount")
+    @PatchMapping("/api/internal/accounts/amount")
     AccountResponse updateAmount(@RequestBody UpdateAmountRequest request,
                                  @RequestHeader("Idempotency-Key") String idempotencyKey);
 }

@@ -25,8 +25,6 @@ public class CashController {
 
     @PostMapping
     public AccountResponse editCash(@RequestBody CashActionRequest request) {
-        log.info("Incoming request: POST /api/cash with body: {}", request);
-
         String login = extractLogin();
         return cashService.processCashAction(login, request.value(), request.action(), UUID.randomUUID().toString());
     }
@@ -36,7 +34,6 @@ public class CashController {
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Jwt jwt = jwtAuth.getToken();
             String login = jwt.getClaimAsString("preferred_username");
-            log.info("Extracted login='{}' from JWT", login);
             return login;
         }
         throw new IllegalStateException("Authentication required");

@@ -2,6 +2,9 @@ dependencies:
 - name: postgres
   repository: file://../postgres
   version: 0.1.0
+- name: kafka
+  repository: file://../kafka
+  version: 0.1.0
 - name: gateway-service
   repository: file://../gateway-service
   version: 0.1.0
@@ -17,5 +20,5 @@ dependencies:
 - name: notification-service
   repository: file://../notification-service
   version: 0.1.0
-digest: sha256:ec1c7f9e17b790fdb450afbdbcb2c1d2b37f1d972a05827ecf95f272f0472efd
-generated: "2026-08-07T22:08:45.442531092+03:00"
+digest: sha256:abe94c9dfaddc79ecc72789161a9474c4c30e0886523cc8692602324a79bd406
+generated: "2026-08-22T16:33:30.219012888+03:00"

@@ -6,6 +6,7 @@ mapstruct = "1.6.3"
 [libraries]
 spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-kafka = { module = "org.springframework.kafka:spring-kafka" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-starter-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client" }

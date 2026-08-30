@@ -9,6 +9,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import feign.FeignException;
+import org.springframework.http.HttpStatus;
 import ru.yandex.practicum.mybankfront.client.AccountsClient;
 import ru.yandex.practicum.mybankfront.client.CashClient;
 import ru.yandex.practicum.mybankfront.client.TransferClient;
@@ -125,11 +127,21 @@ public class MainController {
             @RequestParam("action") CashAction action
             ) {
         CashActionRequest request = new CashActionRequest(value, action);
-        AccountResponse response = cashClient.editCash(request);
-        fillModel(model, response, null, action == CashAction.GET
-                ? "Снято %s руб".formatted(value)
-                : "Положено %s руб".formatted(value));
-        return "main";
+        try {
+            AccountResponse response = cashClient.editCash(request);
+            fillModel(model, response, null, action == CashAction.GET
+                    ? "Снято %s руб".formatted(value)
+                    : "Положено %s руб".formatted(value));
+            return "main";
+        } catch (FeignException e) {
+            if (e.status() == HttpStatus.BAD_REQUEST.value() && e.contentUTF8().contains("Insufficient funds")) {
+                log.warn("Insufficient funds for cash operation: value={}, action={}", value, action);
+                fillModel(model, accountsClient.getAccount(),
+                        List.of("Недостаточно средств на счету"), null);
+                return "main";
+            }
+            throw e;
+        }
     }
 
     /**
@@ -152,9 +164,19 @@ public class MainController {
             @RequestParam("login") String login
     ) {
         TransferRequest request = new TransferRequest(value, login);
-        AccountResponse response = transferClient.transfer(request);
-        fillModel(model, response, null, "Успешно переведено %s руб клиенту %s".formatted(value, login));
-        return "main";
+        try {
+            AccountResponse response = transferClient.transfer(request);
+            fillModel(model, response, null, "Успешно переведено %s руб клиенту %s".formatted(value, login));
+            return "main";
+        } catch (FeignException e) {
+            if (e.status() == HttpStatus.BAD_REQUEST.value() && e.contentUTF8().contains("Insufficient funds")) {
+                log.warn("Insufficient funds for transfer: value={}, to='{}'", value, login);
+                fillModel(model, accountsClient.getAccount(),
+                        List.of("Недостаточно средств для перевода"), null);
+                return "main";
+            }
+            throw e;
+        }
     }
 
     private String fallbackGetAccount(Throwable t) {

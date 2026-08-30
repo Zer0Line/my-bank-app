@@ -11,7 +11,7 @@ service:
   port: 8084
 
 secrets:
-  serviceClientSecret: jqfP3f78QoeJ3VYNKm17CBSDKu212Int
+  serviceClientSecret: ed665a3b915cd26c6652a07ae684d513
 
 probes:
   path: /actuator/health
@@ -23,3 +23,6 @@ resources:
   limits:
     cpu: 1
     memory: 1Gi
+
+kafka:
+  bootstrapServers: "bank-kafka-broker:9092"

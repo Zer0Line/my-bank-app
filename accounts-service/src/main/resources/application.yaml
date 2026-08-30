@@ -6,12 +6,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 10
 
 app:
   outbox:
     poll-interval: 5000
     batch-size: 100
-
-clients:
-  notification-service:
-    url: http://notification-service:8085

@@ -10,6 +10,10 @@ dependencies:
     version: 0.1.0
     repository: file://../postgres
     condition: postgres.enabled
+  - name: kafka
+    version: 0.1.0
+    repository: file://../kafka
+    condition: kafka.enabled
   - name: gateway-service
     version: 0.1.0
     repository: file://../gateway-service

@@ -26,5 +26,16 @@ data:
               # localhost:8082, недоступный из подов, поэтому проверяем подпись
               # через JWKS-эндпоинт внутрикластерного Service "keycloak".
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        consumer:
+          group-id: notification-service
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+          properties:
+            spring.json.trusted.packages: "*"
+            spring.json.value.default.type: ru.yandex.practicum.notification.dto.OperationRequest
+            spring.json.use.type.headers: "false"
     server:
       port: 8085

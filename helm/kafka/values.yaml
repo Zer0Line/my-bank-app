@@ -1,0 +1,255 @@
+# Default values for kafka.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+clusterDomain: "cluster.local"
+
+# It is recommended to use a random cluster id for each cluster.
+# cat /proc/sys/kernel/random/uuid | base64 | cut -b 1-22
+clusterId: "YLlmZWU5YTItYThjNi00Zg"
+
+image:
+  repository: kafkace/kafka
+  pullPolicy: IfNotPresent
+  tag: v3.7.1-63ba8d2
+
+rbac:
+  create: true
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+global:
+  podAnnotations: {}
+  podLabels: {}
+  imagePullSecrets: []
+  hostAliases: []
+
+  ## Default affinity preset for all components
+  affinityPreset:
+    # -- Default pod anti-affinity rules. Either: `none`, `soft` or `hard`
+    podAntiAffinity: soft
+    # Node affinity rules
+    nodeAffinity:
+      # -- Default node affinity rules. Either: `none`, `soft` or `hard`
+      type: soft
+      # -- Default match expressions for node affinity
+      matchExpressions: []
+        # - key: topology.kubernetes.io/zone
+        #   operator: In
+        #   values:
+        #    - antarctica-east1
+        #    - antarctica-west1
+
+broker:
+  replicaCount: 1
+  containerPort: 9092
+  terminationGracePeriodSeconds: 60
+  heapOpts: "-Xms768m -Xmx768m"
+  commonEnvs: []
+  extraEnvs: []
+
+  ## broker.config - настройки server.properties
+  ## Некоторые ключевые настройки переопределяются переменными окружения, например: node.id, advertised.listeners, controller.quorum.voters и др.
+  config:
+    num.partitions: "2"
+    # At least once: продюсер с acks=all ждёт подтверждения записи.
+    min.insync.replicas: "1"
+    default.replication.factor: "1"
+    # С одним брокером internal-темы должны иметь RF=1, иначе не создадутся
+    offsets.topic.replication.factor: "1"
+    transaction.state.log.replication.factor: "1"
+    transaction.state.log.min.isr: "1"
+
+  ## broker.persistence
+  persistence:
+    enabled: true
+    size: 5Gi
+    mountPath: /var/lib/kafka/data
+    logsMountPath: /opt/kafka/logs
+    # storageClass: "gp2"
+
+  ## broker.resources
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+  
+  ## broker.readinessProbe
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  ## broker.livenessProbe
+  livenessProbe: {}
+
+  ## broker.nodeSelector
+  nodeSelector: {}
+  tolerations: []
+
+  ## broker.podAnnotations
+  podAnnotations: {}
+  podLabels: {}
+
+  ## broker.antiAffinity
+  antiAffinity: soft
+  antiAffinityTopologyKey: kubernetes.io/hostname
+  podAffinity: {}
+  nodeAffinity: {}
+
+  ## broker.updateStrategy
+  updateStrategy:
+    type: RollingUpdate
+
+  ## broker.service
+  service:
+    ## broker.service.type - "ClusterIP" "NodePort" or "LoadBalancer"
+    type: ClusterIP
+    port: 9092
+    # nodePort: 31092
+    annotations: {}
+
+  ## broker.external
+  external:
+    enabled: false
+    containerPort: 9095
+    # hostPort: 9095
+    ## broker.external.type -- "NodePort" "LoadBalancer" "HostPort" or "PodIP"
+    type: "NodePort"
+    nodePorts: []
+    externalDns:
+      enabled: false
+      domain: ""
+      hostnamePrefix: ""
+      annotations: {}
+    autoDiscovery:
+      enabled: false
+      image:
+        repository: kafkace/kubectl
+        pullPolicy: IfNotPresent
+        tag: v1.30
+    service:
+      annotations: {}
+      port: 9095
+
+controller:
+  # Отдельная KRaft-нода (метаданные кластера)
+  enabled: true
+  replicaCount: 1
+  containerPort: 9091
+  terminationGracePeriodSeconds: 60
+  heapOpts: "-Xms512m -Xmx512m"
+  commonEnvs: []
+  # Чарт монтирует PVC контроллера в /opt/kafka/data, но log.dir по
+  # умолчанию /var/lib/kafka/data. Выравниваем, чтобы meta.properties
+  # писался в PVC (иначе формат KRaft падает с "No readable meta.properties").
+  extraEnvs:
+    - name: KAFKA_CFG_LOG_DIR
+      value: /opt/kafka/data
+  podLabels: {}
+  podAnnotations: {}
+  persistence:
+    enabled: true
+    size: 5Gi
+    # storageClass: "gp2"
+  ## controller.resources
+  resources:
+    limits:
+      cpu: 4
+      memory: 8Gi
+    requests:
+      cpu: 100m
+      memory: 1Gi
+
+  ## controller.readinessProbe
+  readinessProbe:
+    tcpSocket:
+      port: controller
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  ## controller.livenessProbe
+  livenessProbe: {}
+    # tcpSocket:
+    #   port: controller
+    # initialDelaySeconds: 300
+    # periodSeconds: 30
+    # timeoutSeconds: 5
+    # failureThreshold: 5
+
+  ## controller.nodeSelector
+  nodeSelector: {}
+  tolerations: []
+
+  ## controller.podAnnotations
+  podAnnotations: {}
+
+  ## controller.antiAffinity
+  antiAffinity: soft
+  antiAffinityTopologyKey: kubernetes.io/hostname
+  nodeAffinity: {}
+
+  ## controller.updateStrategy
+  updateStrategy:
+    type: RollingUpdate
+
+  ## controller.service
+  service:
+    annotations: {}
+    labels: {}
+
+ui:
+  # Kafka UI с доступом через port-forward на localhost:9092
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: provectuslabs/kafka-ui
+    pullPolicy: IfNotPresent
+    tag: v0.7.2
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  ## ui.resources
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 256Mi
+  
+  ## ui.readinessProbe
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 60
+    failureThreshold: 5
+  
+  ## ui.service
+  service:
+    annotations: {}
+    type: ClusterIP
+    

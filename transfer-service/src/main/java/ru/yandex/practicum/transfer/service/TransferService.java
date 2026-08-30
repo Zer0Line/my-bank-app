@@ -26,10 +26,6 @@ public class TransferService {
                 actionRequest.login(),
                 actionRequest.value()
         );
-
-        log.info("Calling accounts-service to transfer from '{}' to '{}', amount={}",
-                senderLogin, actionRequest.login(), actionRequest.value());
-
         operationNotifierService.notifyOperationStarted(senderLogin, actionRequest.login(), actionRequest.value());
 
         return accountsServiceClient.transfer(request, idempotencyKey);

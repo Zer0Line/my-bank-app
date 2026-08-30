@@ -26,15 +26,13 @@ data:
               # localhost:8082, недоступный из подов, поэтому проверяем подпись
               # через JWKS-эндпоинт внутрикластерного Service "keycloak".
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
-          client:
-            registration:
-              service-client:
-                client-id: transfer-service
-                client-secret: ${SERVICE_CLIENT_SECRET}
-                authorization-grant-type: client_credentials
-            provider:
-              service-client:
-                token-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/token
+      kafka:
+        bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+          acks: all
+          retries: 10
     resilience4j:
       circuitbreaker:
         configs:
@@ -64,8 +62,12 @@ data:
       outbox:
         poll-interval: 5000
         batch-size: 100
-    clients:
-      notification-service:
-        url: http://notification-service:8085
+      security:
+        oauth2:
+          resourceserver:
+            jwt:
+              jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
+              issuer-uri: http://localhost:8082/realms/bank-realm
+              audiences: accounts-service,bank-ui
     server:
       port: 9092

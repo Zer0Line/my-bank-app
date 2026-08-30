@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.cash.config.SecurityConfig;
-import ru.yandex.practicum.cash.config.TestSecurityConfig;
 import ru.yandex.practicum.cash.dto.CashAction;
 import ru.yandex.practicum.cash.dto.CashActionRequest;
 import ru.yandex.practicum.cash.service.CashService;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "clients.notification-service.url=http://localhost:8085",
         "clients.accounts-service.url=http://localhost:9092"
 })
-@Import({SecurityConfig.class, TestSecurityConfig.class})
+@Import(SecurityConfig.class)
 class CashControllerSecurityTest {
 
     @Autowired
@@ -39,6 +39,9 @@ class CashControllerSecurityTest {
 
     @MockBean
     private CashService cashService;
+
+    @MockBean
+    private JwtDecoder jwtDecoder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -75,7 +78,7 @@ class CashControllerSecurityTest {
         mockMvc.perform(post("/api/cash")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CashActionRequest(BigDecimal.valueOf(500), CashAction.PUT)))
-                        .with(authentication(tokenWithRoles("SERVICE"))))
+                        .with(authentication(tokenWithRoles("USER"))))
                 .andExpect(status().isOk());
     }
 }

@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kafka.fullname" . }}-topics-init
+  labels:
+    {{- include "kafka.labels" . | nindent 4 }}
+    app.kubernetes.io/component: topics-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 20
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        {{- include "kafka.labels" . | nindent 8 }}
+        app.kubernetes.io/component: topics-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-topics
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              set -uo pipefail
+              export PATH="/opt/kafka/bin:${PATH}"
+              BOOTSTRAP="{{ include "kafka.broker.fullname" . }}:{{ .Values.broker.containerPort }}"
+              echo "Waiting for Kafka broker at ${BOOTSTRAP} ..."
+              reachable=0
+              for i in $(seq 1 120); do
+                if kafka-topics.sh --bootstrap-server "${BOOTSTRAP}" --list >/dev/null 2>&1; then
+                  echo "Broker is reachable."
+                  reachable=1
+                  break
+                fi
+                echo "  attempt ${i}: broker not ready, retrying in 5s"
+                sleep 5
+              done
+              if [ "${reachable}" != "1" ]; then
+                echo "ERROR: broker did not become reachable in time" >&2
+                exit 1
+              fi
+              for topic in account-operations transfer-request cash-request; do
+                echo "Creating topic ${topic} ..."
+                kafka-topics.sh --bootstrap-server "${BOOTSTRAP}" \
+                  --create --if-not-exists \
+                  --topic "${topic}" \
+                  --partitions 1 --replication-factor 1
+              done
+              echo "Topics are ready."
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

@@ -24,12 +24,7 @@ public class CashService {
     @Retry(name = "accounts-service")
     public AccountResponse processCashAction(String login, BigDecimal value, CashAction action, String idempotencyKey) {
         var request = new UpdateAmountRequest(login, value, action);
-
-        log.info("Calling accounts-service to update amount for login='{}', value={}, action={}",
-                login, value, action);
-
         operationNotifierService.notifyOperationStarted(login, action, value);
-
         return accountsServiceClient.updateAmount(request, idempotencyKey);
     }
 

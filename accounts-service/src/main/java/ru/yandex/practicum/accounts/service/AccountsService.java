@@ -37,7 +37,6 @@ public class AccountsService {
     public AccountResponse getAccount() {
         String login = extractLogin();
         AccountEntity account = findAccountByLogin(login);
-        log.info("Account found for login='{}': {}", login, account);
         return buildFullResponse(login, account);
     }
 
@@ -51,7 +50,6 @@ public class AccountsService {
         account.setDateOfBirth(LocalDate.parse(request.birthdate()));
 
         AccountEntity saved = accountRepository.save(account);
-        log.info("Account updated for login='{}': {}", login, saved);
         operationNotifierService.notifyAccountUpdate(login);
         return buildFullResponse(login, saved);
     }
@@ -78,7 +76,6 @@ public class AccountsService {
 
         account.setAmount(newAmount);
         AccountEntity saved = accountRepository.save(account);
-        log.info("Amount updated for login='{}': new amount={}", request.login(), newAmount);
         operationNotifierService.notifyCashOperation(request.login(), request.action(), request.value());
         return buildFullResponse(request.login(), saved);
     }
@@ -106,9 +103,6 @@ public class AccountsService {
         accountRepository.save(sender);
         accountRepository.save(recipient);
 
-        log.info("Transfer completed: sender='{}', recipient='{}', amount={}",
-                request.senderLogin(), request.recipientLogin(), request.amount());
-
         operationNotifierService.notifyTransfer(request.senderLogin(), request.recipientLogin(), request.amount());
 
         return buildFullResponse(request.senderLogin(), sender);
@@ -133,8 +127,6 @@ public class AccountsService {
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Jwt jwt = jwtAuth.getToken();
             String login = jwt.getClaimAsString("preferred_username");
-            log.info("Token claims: preferred_username={}, subject={}, issuer={}",
-                    login, jwt.getSubject(), jwt.getIssuer());
             return login;
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
