@@ -4,9 +4,6 @@
 postgres:
   enabled: true
 
-gateway-service:
-  enabled: true
-
 accounts-service:
   enabled: true
 
