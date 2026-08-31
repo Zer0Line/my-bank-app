@@ -22,9 +22,8 @@ data:
         oauth2:
           resourceserver:
             jwt:
-              # Keycloak запущен на хосте (docker-compose). Его issuer (KC_HOSTNAME_URL) —
-              # localhost:8082, недоступный из подов, поэтому проверяем подпись
-              # через JWKS-эндпоинт внутрикластерного Service "keycloak".
+              # Keycloak запущен в minikube. Проверяем подпись через JWKS-эндпоинт
+              # внутрикластерного Service "keycloak".
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
       kafka:
         bootstrap-servers: {{ .Values.kafka.bootstrapServers }}

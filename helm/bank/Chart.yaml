@@ -14,10 +14,6 @@ dependencies:
     version: 0.1.0
     repository: file://../kafka
     condition: kafka.enabled
-  - name: gateway-service
-    version: 0.1.0
-    repository: file://../gateway-service
-    condition: gateway-service.enabled
   - name: accounts-service
     version: 0.1.0
     repository: file://../accounts-service
@@ -34,3 +30,7 @@ dependencies:
     version: 0.1.0
     repository: file://../notification-service
     condition: notification-service.enabled
+  - name: keycloak
+    version: 0.1.0
+    repository: file://../keycloak
+    condition: keycloak.enabled

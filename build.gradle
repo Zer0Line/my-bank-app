@@ -46,7 +46,6 @@ subprojects {
     }
 
     def servicePorts = [
-        'gateway-service'      : '9091',
         'accounts-service'     : '9092',
         'cash-service'         : '8084',
         'transfer-service'     : '8083',

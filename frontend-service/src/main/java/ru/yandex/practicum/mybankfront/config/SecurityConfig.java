@@ -44,7 +44,7 @@ public class SecurityConfig {
                     metadata.putAll(reg.getProviderDetails().getConfigurationMetadata());
                 }
                 metadata.put("end_session_endpoint",
-                        "http://localhost:8082/realms/bank-realm/protocol/openid-connect/logout");
+                        "http://localhost:18082/realms/bank-realm/protocol/openid-connect/logout");
                 reg = ClientRegistration.withClientRegistration(reg)
                         .providerConfigurationMetadata(metadata)
                         .build();

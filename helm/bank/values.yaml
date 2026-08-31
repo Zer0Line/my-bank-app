@@ -21,12 +21,14 @@ notification-service:
 kafka:
   enabled: true
 
-# Keycloak и frontend-service запускаются через docker-compose на хосте, а не в Kubernetes.
-# externalKeycloak.host — адрес хост-машины с точки зрения подов Kubernetes
-# (docker bridge gateway сети minikube). Посмотреть можно так: minikube ssh "ip route"
-externalKeycloak:
-  host: 192.168.49.1
-  port: 8082
+keycloak:
+  enabled: true
+  # KC_HOSTNAME_URL — issuer всех JWT. Должен совпадать с адресом port-forward
+  # (kubectl port-forward svc/keycloak 18082:8082 -n bank), через который ходят
+  # браузер и frontend-service. backend-сервисы валидируют issuer по этому же URL.
+  hostname:
+    url: http://localhost:18082
+    strict: false
 
 externalZipkin:
   host: 192.168.49.1

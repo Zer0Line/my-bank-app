@@ -1,61 +1,21 @@
-# Keycloak и frontend-service запускаются на хост-машине через docker-compose.
-# PostgreSQL и backend-микросервисы работают в minikube (Helm).
-# Zipkin хранит данные в PostgreSQL (БД zipkin).
+# Frontend-service запускается на хост-машине через docker-compose.
+# PostgreSQL, Keycloak и backend-микросервисы работают в minikube (Helm).
 #
-# Пользовательские адреса — только на localhost (в конфигах нет привязки к IP):
+# Пользовательские адреса — только на localhost:
 #   - frontend-service: http://localhost:9090
-#   - Keycloak (admin): http://localhost:8082  (admin / admin)
-#   - Zipkin:           http://localhost:9411
-#   - gateway:          http://localhost:9091  (через kubectl port-forward)
-#   - PostgreSQL:       localhost:5432         (через kubectl port-forward)
+#   - Keycloak (admin): http://localhost:18082/admin/  (admin / admin)
+#     — через kubectl port-forward svc/keycloak 18082:8082 -n bank
+#   - PostgreSQL:       localhost:5432                  (через kubectl port-forward)
 #
-# Ресурсы Kubernetes доступны с хоста через kubectl port-forward
-# (см. scripts/start-port-forwards.sh), поэтому IP ноды minikube не нужен:
-#   kubectl -n bank port-forward svc/gateway-service 9091:9091
-#   kubectl -n bank port-forward svc/postgres 5432:5432
+# Маршрутизация API — через Ingress (nginx) на localhost:8081:
+#   /api/accounts  → accounts-service:9092
+#   /api/cash      → cash-service:8084
+#   /api/transfers → transfer-service:8083
 #
-# Требуется host-сеть: docker bridge сети изолированы от
-# сети minikube, поэтому контейнеры должны использовать сеть хоста.
+# KC_HOSTNAME_URL=http://localhost:18082 (helm/keycloak/values.yaml) — issuer JWT.
+# Не менять порт port-forward, иначе сломается валидация issuer в backend-сервисах.
 
 services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    command: ["start-dev", "--import-realm"]
-    # Host-сеть: docker bridge сети изолированы от сети minikube.
-    network_mode: host
-    environment:
-      KC_DB: postgres
-      # PostgreSQL работает в minikube и доступен через kubectl port-forward на localhost.
-      KC_DB_URL: jdbc:postgresql://localhost:5432/bankdb
-      KC_DB_USERNAME: bankuser
-      KC_DB_PASSWORD: bankpass
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      # Единый внешний URL, который Keycloak использует для редиректов и как issuer токенов.
-      # Доступен из браузера и из frontend-service на хосте.
-      # Backend-поды валидируют JWT по подписи (jwk-set-uri), поэтому
-      # issuer на localhost не обязан резолвиться изнутри minikube.
-      KC_HOSTNAME_URL: http://localhost:8082
-      KC_HTTP_PORT: 8082
-    volumes:
-      - ./keycloak/bank-realm.json:/opt/keycloak/data/import/bank-realm.json:ro
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8082'"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-  zipkin:
-    image: openzipkin/zipkin:2.27.1
-    network_mode: host
-    environment:
-      STORAGE_TYPE: mem
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9411/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
   frontend-service:
     image: frontend-service:0.0.3-SNAPSHOT
     network_mode: host
@@ -64,6 +24,3 @@ services:
       UI_CLIENT_SECRET: ui-client-secret
     volumes:
       - ./docker/frontend/application.yaml:/config/application.yaml:ro
-    depends_on:
-      keycloak:
-        condition: service_healthy

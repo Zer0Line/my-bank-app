@@ -1,0 +1,42 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/keycloak/keycloak
+  tag: "24.0"
+  pullPolicy: IfNotPresent
+
+fullnameOverride: keycloak
+
+auth:
+  admin: admin
+  adminPassword: admin
+
+database:
+  vendor: postgres
+  host: postgres
+  port: 5432
+  name: bankdb
+  username: bankuser
+  password: bankpass
+
+hostname:
+  url: http://localhost:18082
+  strict: false
+
+service:
+  port: 8082
+
+probe:
+  path: /realms/bank-realm
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 12
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
