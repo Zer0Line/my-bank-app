@@ -10,6 +10,8 @@ dependencies {
     implementation libs.spring.boot.starter.oauth2.client
     implementation libs.spring.cloud.starter.openfeign
     implementation libs.spring.cloud.starter.circuitbreaker.resilience4j
+    implementation libs.micrometer.tracing.bridge.brave
+    implementation libs.zipkin.reporter.brave
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     testImplementation libs.spring.boot.starter.test

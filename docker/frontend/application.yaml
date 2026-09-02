@@ -17,6 +17,13 @@ spring:
             jwk-set-uri: http://localhost:18082/realms/bank-realm/protocol/openid-connect/certs
             user-info-uri: http://localhost:18082/realms/bank-realm/protocol/openid-connect/userinfo
             user-name-attribute: preferred_username
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 5000
+            read-timeout: 5000
 resilience4j:
   circuitbreaker:
     configs:
@@ -54,3 +61,10 @@ server:
   port: 9090
 gateway:
   base-url: http://localhost:8081
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans

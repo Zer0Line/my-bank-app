@@ -27,6 +27,8 @@ data:
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
       kafka:
         bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        template:
+          observation-enabled: true
         producer:
           key-serializer: org.apache.kafka.common.serialization.StringSerializer
           value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -72,5 +74,8 @@ data:
       tracing:
         sampling:
           probability: 1.0
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
     server:
       port: 9092

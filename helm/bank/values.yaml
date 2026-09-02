@@ -30,6 +30,14 @@ keycloak:
     url: http://localhost:18082
     strict: false
 
-externalZipkin:
-  host: 192.168.49.1
-  port: 9411
+# Zipkin разворачивается внутри minikube чартом openzipkin/zipkin (image 3.5)
+zipkin:
+  enabled: true
+  fullnameOverride: zipkin
+  image:
+    repository: openzipkin/zipkin
+    tag: "3.5"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9411

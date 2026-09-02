@@ -34,3 +34,7 @@ dependencies:
     version: 0.1.0
     repository: file://../keycloak
     condition: keycloak.enabled
+  - name: zipkin
+    version: 0.5.0
+    repository: https://zipkin.io/zipkin-helm
+    condition: zipkin.enabled

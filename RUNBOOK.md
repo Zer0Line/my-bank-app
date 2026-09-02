@@ -101,6 +101,30 @@ Frontend работает на `http://localhost:9090`.
 - **Keycloak (admin):** http://localhost:8081/admin/ — `admin` / `admin`
 - **API (Ingress):** http://localhost:8081/api/accounts, /api/cash, /api/transfers
 - **PostgreSQL:** `localhost:5432` (порт-форвард)
+- **Zipkin (UI):** http://localhost:9411/ — через port-forward `svc/zipkin 9411:9411`
+
+## Zipkin
+
+Zipkin разворачивается внутри minikube чартом `openzipkin/zipkin` (image `openzipkin/zipkin:3.5`)
+как подчарт `helm/bank` (`helm/bank/values.yaml` → `zipkin.*`). Service `zipkin` (ClusterIP, порт 9411)
+доступен backend-сервисам в кластере по адресу `http://zipkin:9411`.
+
+```bash
+kubectl port-forward -n bank svc/zipkin 9411:9411
+# Zipkin UI: http://localhost:9411/
+```
+
+Порт-форвард также поднимается скриптом `scripts/start-port-forwards.sh`.
+
+### Поставка трейсов (Micrometer Tracing / Brave)
+
+Каждый микросервис и frontend-service используют `micrometer-tracing-bridge-brave` +
+`zipkin-reporter-brave` и отправляют трейсы в Zipkin:
+
+- **accounts, cash, transfer, notification** — `management.zipkin.tracing.endpoint: http://zipkin:9411/api/v2/spans`
+  (in-cluster Service), sampling probability = 1.0. Трассируются входящие/исходящие HTTP-запросы,
+  обращения в БД (JPA) и Apache Kafka (продюсер/консьюмер).
+- **frontend-service** (хост, docker-compose) — `management.zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans`
 
 ## Обновление после изменения кода
 

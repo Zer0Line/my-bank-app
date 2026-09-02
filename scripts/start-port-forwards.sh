@@ -6,6 +6,7 @@ set -euo pipefail
 kubectl port-forward -n bank svc/postgres 5432:5432 &
 kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8081:80 &
 kubectl port-forward -n bank svc/bank-kafka-ui 9092:8080 &
+kubectl port-forward -n bank svc/zipkin 9411:9411 &
 kubectl port-forward -n bank svc/keycloak 18082:8082
 
 echo "Port-forwards started (postgres 5432, ingress 8080, kafka-ui localhost:9092)."

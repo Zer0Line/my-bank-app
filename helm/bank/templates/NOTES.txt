@@ -9,6 +9,10 @@ PostgreSQL, Keycloak и все backend-микросервисы развёрну
 
 Frontend-service на хосте: http://localhost:9090 (docker compose up -d frontend-service)
 
+Zipkin (UI и сбор трейсов) — внутри minikube, доступ с localhost:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/zipkin 9411:9411
+  Затем открыть Zipkin UI: http://localhost:9411/
+
 Доступ к PostgreSQL и Kafka UI на localhost:
   bash scripts/start-port-forwards.sh
 

@@ -27,6 +27,8 @@ data:
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
       kafka:
         bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        listener:
+          observation-enabled: true
         consumer:
           group-id: notification-service
           auto-offset-reset: earliest
@@ -40,5 +42,8 @@ data:
       tracing:
         sampling:
           probability: 1.0
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
     server:
       port: 8085
