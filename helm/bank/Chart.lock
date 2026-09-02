@@ -23,5 +23,8 @@ dependencies:
 - name: zipkin
   repository: https://zipkin.io/zipkin-helm
   version: 0.5.0
-digest: sha256:6c3caa11e1dff1af4abf48d9b1c5e1f6e1fd88d1c529d239087f51db172b3c53
-generated: "2026-09-02T09:07:57.045548714+03:00"
+- name: prometheus
+  repository: file://../prometheus
+  version: 0.1.0
+digest: sha256:8b20af4ca0e881125292f3afb066ad4ff27200ab64f5933e458c5a846cb2edef
+generated: "2026-09-02T20:18:03.855077627+03:00"

@@ -1,0 +1,36 @@
+replicaCount: 1
+
+image:
+  repository: prom/prometheus
+  tag: "v2.53.1"
+  pullPolicy: IfNotPresent
+
+fullnameOverride: prometheus
+
+service:
+  port: 9090
+
+# Персистентное хранилище данных TSDB.
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: local-path
+
+# Конфигурация Prometheus (prometheus.yml), монтируется в ConfigMap.
+config:
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+  scrape_configs:
+    - job_name: prometheus
+      static_configs:
+        - targets:
+            - localhost:9090
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

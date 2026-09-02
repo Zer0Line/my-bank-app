@@ -38,3 +38,7 @@ dependencies:
     version: 0.5.0
     repository: https://zipkin.io/zipkin-helm
     condition: zipkin.enabled
+  - name: prometheus
+    version: 0.1.0
+    repository: file://../prometheus
+    condition: prometheus.enabled

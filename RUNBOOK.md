@@ -100,6 +100,7 @@ Frontend работает на `http://localhost:9090`.
 - **Frontend (UI):** http://localhost:9090 — логин `bankuser` / `bankuser`
 - **Keycloak (admin):** http://localhost:8081/admin/ — `admin` / `admin`
 - **API (Ingress):** http://localhost:8081/api/accounts, /api/cash, /api/transfers
+- **Prometheus (UI):** http://localhost:8081/prometheus/graph или http://localhost:19090/ (port-forward)
 - **PostgreSQL:** `localhost:5432` (порт-форвард)
 - **Zipkin (UI):** http://localhost:9411/ — через port-forward `svc/zipkin 9411:9411`
 
@@ -125,6 +126,28 @@ kubectl port-forward -n bank svc/zipkin 9411:9411
   (in-cluster Service), sampling probability = 1.0. Трассируются входящие/исходящие HTTP-запросы,
   обращения в БД (JPA) и Apache Kafka (продюсер/консьюмер).
 - **frontend-service** (хост, docker-compose) — `management.zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans`
+
+## Prometheus
+
+Prometheus разворачивается внутри minikube локальным чартом `helm/prometheus`
+(image `prom/prometheus`) как подчарт `helm/bank` (`helm/bank/values.yaml` → `prometheus.*`).
+Service `prometheus` (ClusterIP, порт 9090) доступен backend-сервисам в кластере по адресу `http://prometheus:9090`.
+
+Конфигурация scrape-задач — в `helm/prometheus/values.yaml` → `config` (монтируется в ConfigMap `prometheus-config`).
+TSDB хранится в PVC `prometheus-data` (по умолчанию `local-path`).
+
+Доступ на localhost:
+
+```bash
+# через Ingress (nginx rewrite /prometheus -> /)
+# http://localhost:8081/prometheus/
+
+# либо через port-forward (порт 19090, т.к. 9090 на хосте занят frontend)
+kubectl port-forward -n bank svc/prometheus 19090:9090
+# http://localhost:19090/
+```
+
+Port-forward также поднимается скриптом `scripts/start-port-forwards.sh`.
 
 ## Обновление после изменения кода
 

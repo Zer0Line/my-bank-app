@@ -92,9 +92,14 @@ Frontend поднимается на `http://localhost:9090`.
 - **Frontend (UI):** http://localhost:9090
 - **Keycloak (admin):** http://localhost:8081/admin/ (admin / admin)
 - **API (через Ingress):** http://localhost:8081/api/accounts, /api/cash, /api/transfers
+- **Prometheus (UI):** http://localhost:8081/prometheus/ или http://localhost:19090/ (port-forward)
 - **PostgreSQL:** `localhost:5432` (через `kubectl port-forward`)
 
 Keycloak доступен через Ingress по пути `/admin/` и `/realms/`.
+
+Prometheus разворачивается локальным чартом `helm/prometheus` (image `prom/prometheus`) как подчарт `helm/bank`. Доступен на localhost:
+- через Ingress: `http://localhost:8081/prometheus/` (nginx rewrite `/prometheus` → `/`);
+- через port-forward: `kubectl port-forward -n bank svc/prometheus 19090:9090` → `http://localhost:19090/`.
 
 > Realm `bank-realm` импортируется автоматически при первом старте Keycloak.
 > При повторном запуске импорт пропускается (данные хранятся в БД).
