@@ -72,3 +72,22 @@ spec:
                 name: prometheus
                 port:
                   number: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          # Grafana работает под subpath /grafana (serve_from_sub_path=true), поэтому
+          # префикс НЕ срезаем nginx-rewrite — его обрабатывает сам Grafana.
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

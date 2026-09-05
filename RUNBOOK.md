@@ -149,6 +149,30 @@ kubectl port-forward -n bank svc/prometheus 19090:9090
 
 Port-forward также поднимается скриптом `scripts/start-port-forwards.sh`.
 
+## Grafana
+
+Grafana разворачивается внутри minikube чартом `grafana/grafana` (image `grafana/grafana`)
+Service `grafana` (ClusterIP, порт 3000)
+доступен backend-сервисам в кластере по адресу `http://grafana:3000`.
+
+- Источник данных Prometheus настроен in-cluster: `http://prometheus:9090`
+  (`helm/bank/values.yaml` → `grafana.datasources.datasources.yaml`).
+- Встроенный datasource-провайдер и дашборды монтируются в `/var/lib/grafana/dashboards/default`
+  (`helm/bank/values.yaml` → `grafana.dashboards`), например дашборд `http-metrics` (RPS, 4xx, 5xx, персентили).
+- Логин/пароль по умолчанию: `admin` / `admin`.
+
+Доступ на localhost:
+
+```bash
+# через Ingress (nginx rewrite /grafana -> /, serve_from_sub_path)
+# http://localhost:8081/grafana/
+
+# либо через port-forward (порт 13000, т.к. 3000 на хосте занят frontend)
+kubectl port-forward -n bank svc/grafana 13000:3000
+# http://localhost:13000/grafana/
+```
+Порт-форвард также поднимается скриптом `scripts/start-port-forwards.sh`.
+
 ## Обновление после изменения кода
 
 ```bash

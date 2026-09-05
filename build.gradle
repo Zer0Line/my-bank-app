@@ -56,6 +56,7 @@ subprojects {
     pluginManager.withPlugin('org.springframework.boot') {
         dependencies {
             implementation libs.spring.boot.starter.actuator
+            implementation libs.micrometer.registry.prometheus
         }
         tasks.named('bootBuildImage') {
             onlyIf { false }
@@ -97,7 +98,6 @@ def serviceProjects = [
     'cash-service',
     'transfer-service',
     'notification-service',
-    'gateway-service',
     'frontend-service'
 ]
 

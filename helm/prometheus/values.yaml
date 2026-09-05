@@ -26,6 +26,34 @@ config:
       static_configs:
         - targets:
             - localhost:9090
+    # Spring Boot микросервисы: метрики HTTP (http_server_requests) и JVM — /actuator/prometheus.
+    - job_name: accounts-service
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets:
+            - accounts-service:9092
+    - job_name: cash-service
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets:
+            - cash-service:8084
+    - job_name: transfer-service
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets:
+            - transfer-service:8083
+    - job_name: notification-service
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets:
+            - notification-service:8085
+    # frontend-service работает на localhost
+    # Из minikube (Docker driver) хост доступен как host.minikube.internal.
+    - job_name: frontend-service
+      metrics_path: /actuator/prometheus
+      static_configs:
+        - targets:
+            - host.minikube.internal:9090
 
 resources:
   requests:

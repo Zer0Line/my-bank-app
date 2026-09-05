@@ -68,3 +68,11 @@ management:
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    distribution:
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
