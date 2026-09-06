@@ -57,10 +57,18 @@ subprojects {
         dependencies {
             implementation libs.spring.boot.starter.actuator
             implementation libs.micrometer.registry.prometheus
+            implementation libs.logstash.logback.encoder
         }
         tasks.named('bootBuildImage') {
             onlyIf { false }
         }
+        def jarSha256 = { File f ->
+            java.security.MessageDigest.getInstance('SHA-256')
+                .digest(f.bytes)
+                .collect { String.format('%02x', it) }
+                .join()
+        }
+
         tasks.register('dockerBuildImage') {
             dependsOn tasks.named('bootJar')
             doLast {
@@ -68,13 +76,21 @@ subprojects {
                 def jarFile = tasks.named('bootJar').get().archiveFile.get().asFile
                 def relativeJar = rootProject.rootDir.toPath().relativize(jarFile.toPath())
                 def port = servicePorts[project.name]
+                def hash = jarSha256(jarFile)
 
-                def result = exec {
-                    commandLine 'docker', 'image', 'inspect', imageTag
+                // Пропускаем пересборку если образ уже содержит именно этот jar.
+                def label = new ByteArrayOutputStream()
+                def inspect = exec {
+                    commandLine 'docker', 'image', 'inspect',
+                        '--format', '{{index .Config.Labels "ru.yandex.practicum.jar-sha256"}}',
+                        imageTag
+                    standardOutput = label
+                    errorOutput = new ByteArrayOutputStream()
                     ignoreExitValue true
                 }
-                if (result.exitValue == 0) {
-                    logger.lifecycle("Image '{}' already exists, skipping", imageTag)
+
+                if (inspect.exitValue == 0 && label.toString().trim() == hash) {
+                    logger.lifecycle("Image '{}' up to date (jar sha256={}), skipping", imageTag, hash)
                     return
                 }
 
@@ -82,12 +98,13 @@ subprojects {
                     workingDir rootProject.rootDir
                     commandLine 'docker', 'build',
                         '-t', imageTag,
+                        '--label', "ru.yandex.practicum.jar-sha256=${hash}",
                         '--build-arg', "JAR_FILE=${relativeJar}",
                         '--build-arg', "APP_PORT=${port}",
                         '-f', 'Dockerfile',
                         '.'
                 }
-                logger.lifecycle("Image '{}' built successfully", imageTag)
+                logger.lifecycle("Image '{}' built successfully (jar sha256={})", imageTag, hash)
             }
         }
     }

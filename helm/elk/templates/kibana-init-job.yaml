@@ -1,0 +1,54 @@
+{{- if .Values.kibana.indexPattern.enabled }}
+# Создаёт в Kibana index pattern (напр. bank-logs-*) и делает его defaultIndex,
+# чтобы Discover/Visualize сразу видели логи. Выполняется после установки/
+# обновления релиза; операции идемпотентны (создание повторно = 409, игнорируем).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "elk.kibana.fullname" . }}-init
+  labels:
+    {{- include "elk.kibana.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "6"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        {{- include "elk.kibana.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup-kibana
+          image: curlimages/curl:8.5.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KIBANA_URL
+              value: "http://{{ include "elk.kibana.fullname" . }}:{{ .Values.kibana.service.port }}/kibana"
+            - name: INDEX_PATTERN_NAME
+              value: {{ .Values.kibana.indexPattern.name | quote }}
+            - name: INDEX_PATTERN_TITLE
+              value: {{ .Values.kibana.indexPattern.title | quote }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -e
+              echo "Waiting for Kibana..."
+              until curl -fsS -o /dev/null "$KIBANA_URL/api/status"; do
+                sleep 5
+              done
+              echo "Creating index pattern '$$INDEX_PATTERN_TITLE'"
+              curl -fsS -XPOST "$KIBANA_URL/api/saved_objects/index-pattern/$$INDEX_PATTERN_NAME" \
+                -H 'Content-Type: application/json' -H 'kbn-xsrf: true' \
+                -d "{\"attributes\":{\"title\":\"$$INDEX_PATTERN_TITLE\"}}" \
+                -o /dev/null || echo "Index pattern already exists (ignored)"
+              echo "Setting default index"
+              curl -fsS -XPOST "$KIBANA_URL/api/kibana/settings/defaultIndex" \
+                -H 'Content-Type: application/json' -H 'kbn-xsrf: true' \
+                -d "{\"value\":\"$$INDEX_PATTERN_NAME\"}" \
+                -o /dev/null || true
+              echo "Kibana init finished."
+{{- end }}

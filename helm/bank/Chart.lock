@@ -29,5 +29,8 @@ dependencies:
 - name: grafana
   repository: https://grafana.github.io/helm-charts
   version: 10.5.15
-digest: sha256:1919c8f96fe16c72e947cb6cd47b3cd45ad9484a1cb3336f203b5b499fd8d81e
-generated: "2026-09-02T21:10:59.098991036+03:00"
+- name: elk
+  repository: file://../elk
+  version: 0.1.0
+digest: sha256:02fd5c13f45f77ba5273238a904ca357304c00081c3c8b148d6c743c21c4d999
+generated: "2026-09-05T11:06:57.957018417+03:00"

@@ -1,33 +1,8 @@
 # RUNBOOK: Запуск стенда my-bank-app
 
-Инструкция по сборке образов, развертыванию через minikube и Helm.
+Инструкция по сборке образов, развертыванию через minikube и Helm и запуску frontend-service на хосте.
 
-## Как устроено
-
-| Сервис                                          | Где работает | Как запустить  |
-|-------------------------------------------------|---|----------------|
-| PostgreSQL 16                                   | minikube (StatefulSet + PVC) | Helm           |
-| accounts, cash, transfer, notification          | minikube | Helm           |
-| Keycloak 24                                     | minikube (StatefulSet) | Helm           |
-| Ingress (nginx)                                 | minikube | minikube addon |
-| frontend-service                                | хост-машина | docker-compose |
-
-Все backend-сервисы и Keycloak работают в minikube. Маршрутизация — через Ingress.
-
-## OAuth2 и клиенты Keycloak
-
-Каждый бэкенд-сервис, которому нужно ходить в другой сервис по HTTP, имеет **собственный** client в realm `bank-realm` и собственный секрет (client-credentials flow):
-
-| Сервис (clientId)     | Секрет (Helm)                                      | Назначение |
-|-----------------------|----------------------------------------------------|------------|
-| `bank-ui`             | (пользовательский логин `bankuser` / `bankuser`)   | фронт; роли `USER`, `TRANSFER_WRITE` |
-| `cash-service`        | `helm/cash-service/values.yaml` → `secrets.serviceClientSecret`   | вызывает `accounts-service` (`/api/internal/**`, роль `ACCOUNTS_WRITE`) |
-| `transfer-service`    | `helm/transfer-service/values.yaml` → `secrets.serviceClientSecret` | вызывает `accounts-service` (`/api/internal/**`, роль `ACCOUNTS_WRITE`) |
-| `accounts-service`    | — (не имеет client-секрета, только resource server) | принимает токены `aud=accounts-service` |
-| `notification-service`| — (Kafka-only, токены не используются)             | слушает Kafka, HTTP не принимает |
-
-- В `keycloak/bank-realm.json` у всех клиентов `fullScopeAllowed=false`, а каждому клиенту выданы **только минимально необходимые** realm-роли через scope mappings.
-- Каждый resource server проверяет **issuer + audience** токена (см. `app.security.oauth2.resourceserver.jwt.*` в соответствующих configmap).
+> Описание сервисов и архитектуры — см. `README.md`, детали Helm-чартов — `helm/README.md`.
 
 ## Сборка и тесты
 
@@ -49,6 +24,8 @@ docker rmi accounts-service:0.0.3-SNAPSHOT \
 
 ## Загрузка образов в minikube
 
+Через скрипт `scripts/add_images_to_minikube.sh`
+или
 ```bash
 for img in accounts-service cash-service transfer-service notification-service; do
   docker save $img:0.0.3-SNAPSHOT | minikube image load -
@@ -57,33 +34,51 @@ done
 
 ## Установка через Helm
 
+> Таймаут увеличен (`--timeout 15m`): Helm ждёт post-install hook-джобы
+> `elasticsearch-init` и `bank-kafka-topics-init`, которые дожидаются готовности
+> Elasticsearch/Kafka. На дефолтных 5 минутах чистый стенд может не успеть подняться
+> (Helm отдаёт `failed post-install: timed out waiting for the condition`).
+
+### Первая установка (с нуля)
+При первой установке желательно поднимать сначала postgresql и keycloak.
+
 ```bash
 minikube addons enable ingress
+
 helm dependency build helm/bank
-helm install bank helm/bank -n bank --create-namespace
-```
 
-Только PostgreSQL (для работы с БД без backend):
-
-```bash
-helm install bank helm/bank -n bank --create-namespace \
+# 1. PostgreSQL — база должна быть готова до запуска остальных сервисов
+helm install bank helm/bank -n bank --create-namespace --timeout 5m \
   --set accounts-service.enabled=false \
   --set cash-service.enabled=false \
   --set transfer-service.enabled=false \
   --set notification-service.enabled=false \
   --set keycloak.enabled=false
+
+# 2. Keycloak — зависит от PostgreSQL (KC_DB_URL_HOST)
+helm install bank helm/bank -n bank --timeout 5m \
+  --set accounts-service.enabled=false \
+  --set cash-service.enabled=false \
+  --set transfer-service.enabled=false \
+  --set notification-service.enabled=false
+
+# 3. Umbrella chart — поднимает оставшиеся сервисы и инфраструктуру
+helm upgrade --install bank helm/bank -n bank --timeout 15m
 ```
 
-Повторное применение после правок в чартах:
+### Повторная установка / обновление
+
+После правок в чартах:
 
 ```bash
+helm dependency update helm/bank
 helm dependency build helm/bank
-helm upgrade bank helm/bank -n bank
+helm upgrade --install bank helm/bank -n bank --timeout 15m
 ```
 
 Секреты БД по умолчанию: `bankuser` / `bankpass` / БД `bankdb` (`helm/postgres/values.yaml`).
 
-Секреты OAuth2-клиентов Keycloak задаются в `helm/<service>/values.yaml` → `secrets.serviceClientSecret` (см. раздел «OAuth2 и клиенты Keycloak»).
+Секреты OAuth2-клиентов Keycloak задаются в `helm/<service>/values.yaml` → `secrets.serviceClientSecret`.
 
 ## Frontend на хосте
 
@@ -93,7 +88,8 @@ docker compose up -d frontend-service
 
 Frontend работает на `http://localhost:9090`.
 
-> Если `scripts/start-port-forwards.sh` падает, поднимать форварды вручную через `setsid nohup kubectl -n bank port-forward svc/<svc> <port>:<port> &`.
+> Если `scripts/start-port-forwards.sh` падает, поднимать форварды вручную через
+> `setsid nohup kubectl -n bank port-forward svc/<svc> <port>:<port> &`.
 
 ## Доступ
 
@@ -103,75 +99,8 @@ Frontend работает на `http://localhost:9090`.
 - **Prometheus (UI):** http://localhost:8081/prometheus/graph или http://localhost:19090/ (port-forward)
 - **PostgreSQL:** `localhost:5432` (порт-форвард)
 - **Zipkin (UI):** http://localhost:9411/ — через port-forward `svc/zipkin 9411:9411`
-
-## Zipkin
-
-Zipkin разворачивается внутри minikube чартом `openzipkin/zipkin` (image `openzipkin/zipkin:3.5`)
-как подчарт `helm/bank` (`helm/bank/values.yaml` → `zipkin.*`). Service `zipkin` (ClusterIP, порт 9411)
-доступен backend-сервисам в кластере по адресу `http://zipkin:9411`.
-
-```bash
-kubectl port-forward -n bank svc/zipkin 9411:9411
-# Zipkin UI: http://localhost:9411/
-```
-
-Порт-форвард также поднимается скриптом `scripts/start-port-forwards.sh`.
-
-### Поставка трейсов (Micrometer Tracing / Brave)
-
-Каждый микросервис и frontend-service используют `micrometer-tracing-bridge-brave` +
-`zipkin-reporter-brave` и отправляют трейсы в Zipkin:
-
-- **accounts, cash, transfer, notification** — `management.zipkin.tracing.endpoint: http://zipkin:9411/api/v2/spans`
-  (in-cluster Service), sampling probability = 1.0. Трассируются входящие/исходящие HTTP-запросы,
-  обращения в БД (JPA) и Apache Kafka (продюсер/консьюмер).
-- **frontend-service** (хост, docker-compose) — `management.zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans`
-
-## Prometheus
-
-Prometheus разворачивается внутри minikube локальным чартом `helm/prometheus`
-(image `prom/prometheus`) как подчарт `helm/bank` (`helm/bank/values.yaml` → `prometheus.*`).
-Service `prometheus` (ClusterIP, порт 9090) доступен backend-сервисам в кластере по адресу `http://prometheus:9090`.
-
-Конфигурация scrape-задач — в `helm/prometheus/values.yaml` → `config` (монтируется в ConfigMap `prometheus-config`).
-TSDB хранится в PVC `prometheus-data` (по умолчанию `local-path`).
-
-Доступ на localhost:
-
-```bash
-# через Ingress (nginx rewrite /prometheus -> /)
-# http://localhost:8081/prometheus/
-
-# либо через port-forward (порт 19090, т.к. 9090 на хосте занят frontend)
-kubectl port-forward -n bank svc/prometheus 19090:9090
-# http://localhost:19090/
-```
-
-Port-forward также поднимается скриптом `scripts/start-port-forwards.sh`.
-
-## Grafana
-
-Grafana разворачивается внутри minikube чартом `grafana/grafana` (image `grafana/grafana`)
-Service `grafana` (ClusterIP, порт 3000)
-доступен backend-сервисам в кластере по адресу `http://grafana:3000`.
-
-- Источник данных Prometheus настроен in-cluster: `http://prometheus:9090`
-  (`helm/bank/values.yaml` → `grafana.datasources.datasources.yaml`).
-- Встроенный datasource-провайдер и дашборды монтируются в `/var/lib/grafana/dashboards/default`
-  (`helm/bank/values.yaml` → `grafana.dashboards`), например дашборд `http-metrics` (RPS, 4xx, 5xx, персентили).
-- Логин/пароль по умолчанию: `admin` / `admin`.
-
-Доступ на localhost:
-
-```bash
-# через Ingress (nginx rewrite /grafana -> /, serve_from_sub_path)
-# http://localhost:8081/grafana/
-
-# либо через port-forward (порт 13000, т.к. 3000 на хосте занят frontend)
-kubectl port-forward -n bank svc/grafana 13000:3000
-# http://localhost:13000/grafana/
-```
-Порт-форвард также поднимается скриптом `scripts/start-port-forwards.sh`.
+- **Elasticsearch (API):** http://localhost:9200/ — через port-forward `svc/elasticsearch 9200:9200`
+- **Kibana (UI):** http://localhost:8081/kibana/ (Ingress) или http://localhost:15601/ (port-forward)
 
 ## Обновление после изменения кода
 

@@ -59,6 +59,9 @@ resilience4j:
         base-config: default
 server:
   port: 9090
+app:
+  logstash:
+    host: localhost
 gateway:
   base-url: http://localhost:8081
 management:

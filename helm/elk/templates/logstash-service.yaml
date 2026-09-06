@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "elk.logstash.fullname" . }}
+  labels:
+    {{- include "elk.logstash.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "elk.logstash.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: tcp-input
+      port: {{ .Values.logstash.service.inputPort }}
+      targetPort: {{ .Values.logstash.service.inputPort }}
+      protocol: TCP
+    - name: http-api
+      port: {{ .Values.logstash.service.apiPort }}
+      targetPort: {{ .Values.logstash.service.apiPort }}
+      protocol: TCP

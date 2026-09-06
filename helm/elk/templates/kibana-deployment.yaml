@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "elk.kibana.fullname" . }}
+  labels:
+    {{- include "elk.kibana.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kibana.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "elk.kibana.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "elk.kibana.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: kibana
+          image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
+          imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.kibana.service.port }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              # server.basePath=/kibana + rewriteBasePath=true: запросы БЕЗ /kibana
+              # возвращают 404, поэтому probes ходят на /kibana/api/status.
+              path: /kibana/api/status
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /kibana/api/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.kibana.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/kibana/config/kibana.yml
+              subPath: kibana.yml
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "elk.kibana.fullname" . }}-config

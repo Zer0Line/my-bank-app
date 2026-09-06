@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "elk.kibana.fullname" . }}
+  labels:
+    {{- include "elk.kibana.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "elk.kibana.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.kibana.service.port }}
+      targetPort: http
+      protocol: TCP

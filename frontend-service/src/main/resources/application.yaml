@@ -1,6 +1,12 @@
 spring:
   application:
     name: frontend-service
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 10000
+        read-timeout: 10000
 management:
   tracing:
     sampling:

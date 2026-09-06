@@ -9,6 +9,9 @@ kubectl port-forward -n bank svc/bank-kafka-ui 9092:8080 &
 kubectl port-forward -n bank svc/zipkin 9411:9411 &
 kubectl port-forward -n bank svc/prometheus 19090:9090 &
 kubectl port-forward -n bank svc/grafana 13000:3000 &
+kubectl port-forward -n bank svc/logstash 5000:5000 &
+kubectl port-forward -n bank svc/elasticsearch 9200:9200 &
+kubectl port-forward -n bank svc/kibana 15601:5601 &
 kubectl port-forward -n bank svc/keycloak 18082:8082
 
-echo "Port-forwards started (postgres 5432, ingress 8080, kafka-ui localhost:9092)."
+echo "Port-forwards started (postgres 5432, ingress 8080, kafka-ui localhost:9092, elasticsearch 9200, kibana 15601)."

@@ -46,7 +46,6 @@ data:
             base-config: default
             ignoreExceptions:
               - ru.yandex.practicum.transfer.exception.InsufficientFundsException
-              - ru.yandex.practicum.transfer.exception.OperationNotificationException
           notification-service:
             base-config: default
       retry:

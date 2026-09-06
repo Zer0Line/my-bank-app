@@ -1,5 +1,7 @@
 package ru.yandex.practicum.accounts.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -7,6 +9,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -50,6 +53,9 @@ class AccountsServiceTest {
 
     @Mock
     private IdempotencyService idempotencyService;
+
+    @Spy
+    private MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     @InjectMocks
     private AccountsService accountsService;
@@ -147,6 +153,7 @@ class AccountsServiceTest {
 
         assertEquals(0, BigDecimal.valueOf(600).compareTo(senderEntity.getAmount()));
         verify(operationNotifierService).notifyCashOperation("testuser", CashAction.GET, BigDecimal.valueOf(400));
+        assertEquals(0.0, withdrawalFailedCounter("testuser"), 0.0001);
     }
 
     @Test
@@ -155,6 +162,28 @@ class AccountsServiceTest {
 
         assertThrows(ResponseStatusException.class, () ->
                 accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(2000), CashAction.GET), null));
+
+        assertEquals(1.0, withdrawalFailedCounter("testuser"), 0.0001);
+    }
+
+    @Test
+    void updateAmount_insufficientFunds_groupedByLogin() {
+        when(accountRepository.findByLogin("testuser")).thenReturn(Optional.of(senderEntity));
+        when(accountRepository.findByLogin("otheruser")).thenReturn(Optional.of(senderEntity));
+
+        assertThrows(ResponseStatusException.class, () ->
+                accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(2000), CashAction.GET), null));
+        assertThrows(ResponseStatusException.class, () ->
+                accountsService.updateAmount(new UpdateAmountRequest("testuser", BigDecimal.valueOf(2000), CashAction.GET), null));
+        assertThrows(ResponseStatusException.class, () ->
+                accountsService.updateAmount(new UpdateAmountRequest("otheruser", BigDecimal.valueOf(2000), CashAction.GET), null));
+
+        assertEquals(2.0, withdrawalFailedCounter("testuser"), 0.0001);
+        assertEquals(1.0, withdrawalFailedCounter("otheruser"), 0.0001);
+    }
+
+    private double withdrawalFailedCounter(String login) {
+        return meterRegistry.counter("accounts.withdrawal.failed", "login", login).count();
     }
 
     @Test

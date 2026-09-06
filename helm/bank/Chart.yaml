@@ -46,3 +46,7 @@ dependencies:
     version: 10.5.15
     repository: https://grafana.github.io/helm-charts
     condition: grafana.enabled
+  - name: elk
+    version: 0.1.0
+    repository: file://../elk
+    condition: elk.enabled

@@ -2,141 +2,56 @@
 
 Training project. Spring Boot микросервисное приложение банка.
 
-| Сервис | Порт | Назначение |
-|---|---|---|
-| **accounts-service** | 9092 | Управление счетами |
-| **cash-service** | 8084 | Кассовые операции |
-| **transfer-service** | 8083 | Переводы |
-| **notification-service** | 8085 | Уведомления |
-| **frontend-service** | 9090 | UI (Thymeleaf + OAuth2 Login) |
+> Запуск стенда (сборка образов, Helm, frontend) — см. `RUNBOOK.md`;
+> детальное описание Helm-чартов — `helm/README.md`.
 
-Для аутентификации используется **Keycloak 24.0** (в minikube).
-Для хранения данных — **PostgreSQL 16**.
+## Поднимаемые сервисы
 
-**Архитектура:**
-- В minikube (Helm) работают: PostgreSQL, Keycloak, backend-сервисы (accounts, cash, transfer, notification).
+| Сервис | Порт | Где работает | Назначение |
+|---|---|---|---|
+| **frontend-service** | 9090 | хост (docker-compose) | UI на Thymeleaf, OAuth2 Login |
+| **accounts-service** | 9092 | minikube (Helm) | Счета и балансы; операции (снятие, пополнение, перевод) |
+| **cash-service** | 8084 | minikube (Helm) | Кассовые операции |
+| **transfer-service** | 8083 | minikube (Helm) | Переводы между счетами |
+| **notification-service** | 8085 | minikube (Helm) | Уведомления об операциях (Kafka-only) |
+| **PostgreSQL 16** | 5432 | minikube (Helm) | БД (счета, уведомления, Keycloak) |
+| **Keycloak 24.0** | 8082 | minikube (Helm) | OIDC IdP, realm `bank-realm` |
+| **Kafka (KRaft)** | 9092 | minikube (Helm) | Обмен событиями между сервисами |
+| **Zipkin** | 9411 | minikube (Helm) | Распределённый трейсинг |
+| **Prometheus** | 9090 | minikube (Helm) | Сбор метрик |
+| **Grafana** | 3000 | minikube (Helm) | Дашборды метрик |
+| **ELK** | 5000 / 9200 / 5601 | minikube (Helm) | Логи: Logstash, Elasticsearch, Kibana |
+
+Пользовательские доступы:
+
+- **Frontend (UI):** http://localhost:9090 — логин `bankuser` / `bankuser`
+- **Keycloak (admin):** http://localhost:8081/admin/ — `admin` / `admin`
+
+## Архитектура
+
+- В minikube (umbrella-chart `helm/bank`) работают: PostgreSQL, Kafka, Keycloak, backend-сервисы
+  (accounts, cash, transfer, notification) и стек наблюдения (Zipkin, Prometheus, Grafana, ELK).
 - Frontend-service запускается через docker-compose на хосте.
-- Маршрутизация HTTP-запросов — через **Ingress** (nginx), без API Gateway.
+- Маршрутизация HTTP-запросов — через **Ingress** (nginx):
+  `/api/accounts` → accounts-service, `/api/cash` → cash-service, `/api/transfers` → transfer-service,
+  `/realms`, `/admin` → Keycloak.
 - Сервисы общаются напрямую через Kubernetes Services (ClusterIP / DNS-имена).
 - Конфигурация микросервисов хранится в Kubernetes-объектах **ConfigMap** и **Secret**
   в Helm-чартах (`helm/<service>/templates/configmap.yaml` и `secret.yaml`).
 
----
+## Безопасность
 
-### Сборка проекта
+- Аутентификация — **Keycloak 24.0** (в minikube), realm `bank-realm` импортируется автоматически
+  при первом старте (данные realm хранятся в PostgreSQL).
+- Backend-сервисы — resource server: проверяют **issuer + audience** JWT.
+- Сервис-to-сервис — OAuth2 `client_credentials` (у cash/transfer свой клиент и секрет).
+- Тестовый пользователь для входа: **`bankuser` / `bankuser`** (роли `USER`, `TRANSFER_WRITE`).
+- Данные счетов других пользователей можно добавить в `accounts-service/src/main/resources/data.sql`.
 
-```bash
-./gradlew build
-```
+## Конфигурация
 
-### Запуск тестов
-
-```bash
-./gradlew test
-```
-
-### Сборка Docker-образов
-
-```bash
-./gradlew :accounts-service:dockerBuildImage
-./gradlew :cash-service:dockerBuildImage
-./gradlew :transfer-service:dockerBuildImage
-./gradlew :notification-service:dockerBuildImage
-./gradlew :frontend-service:dockerBuildImage
-```
-
-Собрать все образы сразу:
-
-```bash
-./gradlew dockerBuildImages
-```
-
-> Задача `dockerBuildImage` **пропускает** сборку, если образ с таким тегом уже
-> существует. Для пересборки из актуального исходного кода сначала нужно удалить старые образы:
-> `docker rmi <service>:0.0.3-SNAPSHOT`.
-
-### Запуск через minikube и Helm
-
-#### 1. Сборка и загрузка Docker-образов
-
-```bash
-./gradlew dockerBuildImages
-for img in accounts-service cash-service transfer-service notification-service; do
-  docker save $img:0.0.3-SNAPSHOT | minikube image load -
-done
-```
-
-#### 2. Включение Ingress
-
-```bash
-minikube addons enable ingress
-```
-
-#### 3. Установка Helm-чартов
-
-```bash
-helm dependency build helm/bank
-helm install bank helm/bank -n bank --create-namespace
-```
-
-#### 4. Запуск frontend на хосте
-
-```bash
-docker compose up -d frontend-service
-```
-
-Frontend поднимается на `http://localhost:9090`.
-
-#### 5. Доступ к сервисам
-
-- **Frontend (UI):** http://localhost:9090
-- **Keycloak (admin):** http://localhost:8081/admin/ (admin / admin)
-- **API (через Ingress):** http://localhost:8081/api/accounts, /api/cash, /api/transfers
-- **Prometheus (UI):** http://localhost:8081/prometheus/ или http://localhost:19090/ (port-forward)
-- **PostgreSQL:** `localhost:5432` (через `kubectl port-forward`)
-
-Keycloak доступен через Ingress по пути `/admin/` и `/realms/`.
-
-Prometheus разворачивается локальным чартом `helm/prometheus` (image `prom/prometheus`) как подчарт `helm/bank`. Доступен на localhost:
-- через Ingress: `http://localhost:8081/prometheus/` (nginx rewrite `/prometheus` → `/`);
-- через port-forward: `kubectl port-forward -n bank svc/prometheus 19090:9090` → `http://localhost:19090/`.
-
-> Realm `bank-realm` импортируется автоматически при первом старте Keycloak.
-> При повторном запуске импорт пропускается (данные хранятся в БД).
-
-### Удаление
-
-```bash
-docker compose down
-helm uninstall bank -n bank
-```
-
-> Данные PostgreSQL хранятся в PVC (по умолчанию `local-path`).
-
-### Авторизация
-
-В проекте создан тестовый пользователь для входа:
-
-- **Логин:** `bankuser`
-- **Пароль:** `bankuser`
-
-Данные счетов других пользователей можно добавить в `accounts-service/src/main/resources/data.sql`.
-
-### Конфигурация
-
-- PostgreSQL, Keycloak и backend-микросервисы: Helm-чарты в `helm/`
-- Frontend-service: `docker-compose.yml` (конфиг — `docker/frontend/application.yaml`)
-- Конфиги микросервисов: ConfigMap `<service>-config` + Secret `<service>-secrets`
-- Секреты БД: Secret `postgres-credentials`
-- Ingress для API и Keycloak: `helm/bank/templates/ingress.yaml`
-- Валидация JWT в backend: `jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs`
-
-### Экспорт realm Keycloak
-
-После изменения настроек realm (пользователи, клиенты, роли) можно сделать экспорт:
-
-```bash
-kubectl -n bank exec -it keycloak-0 -- /opt/keycloak/bin/kc.sh export \
-  --realm bank-realm --dir /tmp/ --users realm_file
-kubectl -n bank cp keycloak-0:/tmp/bank-realm-realm.json keycloak/bank-realm.json
-```
+- PostgreSQL, Keycloak, Kafka и backend-микросервисы: Helm-чарты в `helm/`.
+- Frontend-service: `docker-compose.yml` (конфиг — `docker/frontend/application.yaml`).
+- Конфиги микросервисов: ConfigMap `<service>-config` + Secret `<service>-secrets`.
+- Секреты БД: Secret `postgres-credentials`.
+- Ingress для API и Keycloak: `helm/bank/templates/ingress.yaml`.

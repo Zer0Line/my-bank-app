@@ -1,7 +1,6 @@
 package ru.yandex.practicum.cash.client;
 
 import feign.RequestInterceptor;
-import feign.Response;
 import feign.codec.ErrorDecoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;

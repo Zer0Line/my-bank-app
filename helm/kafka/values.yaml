@@ -90,7 +90,9 @@ broker:
   readinessProbe:
     initialDelaySeconds: 30
     periodSeconds: 20
-    timeoutSeconds: 5
+    # JVM startup у kafka-broker-api-versions.sh на загруженной ноде > 5s —
+    # завышаем, чтобы probe не сыпал timeout на рабочем брокере.
+    timeoutSeconds: 15
     failureThreshold: 3
 
   ## broker.livenessProbe
@@ -160,7 +162,6 @@ controller:
     - name: KAFKA_CFG_LOG_DIR
       value: /opt/kafka/data
   podLabels: {}
-  podAnnotations: {}
   persistence:
     enabled: true
     size: 5Gi

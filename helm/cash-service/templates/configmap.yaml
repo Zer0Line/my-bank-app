@@ -46,7 +46,6 @@ data:
             base-config: default
             ignoreExceptions:
               - ru.yandex.practicum.cash.exception.InsufficientFundsException
-              - ru.yandex.practicum.cash.exception.OperationNotificationException
           notification-service:
             base-config: default
       retry:

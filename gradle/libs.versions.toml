@@ -26,6 +26,7 @@ lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-bindin
 spring-cloud-starter-circuitbreaker-resilience4j = { module = "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j" }
 micrometer-tracing-bridge-brave = { module = "io.micrometer:micrometer-tracing-bridge-brave" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version = "8.1" }
 zipkin-reporter-brave = { module = "io.zipkin.reporter2:zipkin-reporter-brave", version = "3.4.0" }
 
 [plugins]

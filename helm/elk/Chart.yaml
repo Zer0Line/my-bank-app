@@ -1,0 +1,6 @@
+apiVersion: v2
+name: elk
+description: ELK log aggregation (Logstash 9 + Elasticsearch OSS 7.10.2 + Kibana) for my-bank-app
+type: application
+version: 0.1.0
+appVersion: "9.0"

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "elk.logstash.fullname" . }}
+  labels:
+    {{- include "elk.logstash.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.logstash.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "elk.logstash.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "elk.logstash.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: logstash
+          image: "{{ .Values.logstash.image.repository }}:{{ .Values.logstash.image.tag }}"
+          imagePullPolicy: {{ .Values.logstash.image.pullPolicy }}
+          ports:
+            - name: tcp-input
+              containerPort: {{ .Values.logstash.service.inputPort }}
+              protocol: TCP
+            - name: http-api
+              containerPort: {{ .Values.logstash.service.apiPort }}
+              protocol: TCP
+          env:
+            # Дефолтный heap Logstash 9.x = 1g, что опасно близко к лимиту контейнера.
+            # Для приёма логов 512m достаточно.
+            - name: LS_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.logstash.service.apiPort }}
+            # Logstash 9.0.0 стартует ~60-75с — даём запас до готовности.
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.logstash.service.apiPort }}
+            # liveness НЕ должен убивать под во время долгого старта:
+            # порог ~90с
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.logstash.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/logstash/config/logstash.yml
+              subPath: logstash.yml
+              readOnly: true
+            - name: config
+              mountPath: /usr/share/logstash/config/pipelines.yml
+              subPath: pipelines.yml
+              readOnly: true
+            - name: config
+              mountPath: /usr/share/logstash/pipeline/01-bank-logs.conf
+              subPath: bank-logs.conf
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "elk.logstash.fullname" . }}-config
