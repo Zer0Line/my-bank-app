@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "elk.elasticsearch.fullname" . }}-config
+  labels:
+    {{- include "elk.elasticsearch.labels" . | nindent 4 }}
+data:
+  elasticsearch.yml: |
+    {{- .Values.elasticsearch.config | nindent 4 }}
+---
+{{- if .Values.elasticsearch.indexTemplate.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "elk.elasticsearch.fullname" . }}-templates
+  labels:
+    {{- include "elk.elasticsearch.labels" . | nindent 4 }}
+data:
+  bank-logs-template.json: |
+    {{- .Values.elasticsearch.indexTemplate.body | nindent 4 }}
+{{- end }}

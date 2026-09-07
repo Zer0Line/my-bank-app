@@ -11,7 +11,7 @@ service:
   port: 8084
 
 secrets:
-  serviceClientSecret: ed665a3b915cd26c6652a07ae684d513
+  serviceClientSecret: cashSvcSecret_a1b2c3d4e5f6
 
 probes:
   path: /actuator/health

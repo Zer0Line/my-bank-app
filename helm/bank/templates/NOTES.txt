@@ -1,16 +1,19 @@
 Вы установили {{ .Chart.Name }}.
 
-PostgreSQL (StatefulSet) и все backend-микросервисы развёрнуты в namespace "{{ .Release.Namespace }}".
+PostgreSQL, Keycloak и все backend-микросервисы развёрнуты в namespace "{{ .Release.Namespace }}".
 
-Доступ (namespace {{ .Release.Namespace }}):
-  - PostgreSQL:  postgres:5432          (StatefulSet postgres-0, данные в PVC data-postgres-0)
-  - Gateway:     kubectl port-forward svc/gateway-service 9091:9091 -n {{ .Release.Namespace }}
+Доступ:
+  - PostgreSQL:  kubectl port-forward svc/postgres 5432:5432 -n {{ .Release.Namespace }}
+  - Keycloak:    http://localhost:8081/admin/ (admin / admin) через Ingress
+  - API:         http://localhost:8081/api/{accounts,cash,transfers} через Ingress
 
-На хосте (docker-compose):
-  - Keycloak:  http://localhost:8082  (admin / admin)
-  - Frontend:  http://localhost:9090
+Frontend-service на хосте: http://localhost:9090 (docker compose up -d frontend-service)
 
-Доступ к gateway и PostgreSQL на localhost для контейнеров на хосте:
+Zipkin (UI и сбор трейсов) — внутри minikube, доступ с localhost:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/zipkin 9411:9411
+  Затем открыть Zipkin UI: http://localhost:9411/
+
+Доступ к PostgreSQL и Kafka UI на localhost:
   bash scripts/start-port-forwards.sh
 
 Если установка из свежего клона, сначала выполнить `helm dependency build ./helm/bank`,

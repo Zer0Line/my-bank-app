@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for img in accounts-service cash-service transfer-service notification-service gateway-service; do
+for img in accounts-service cash-service transfer-service notification-service; do
   tag="$img:0.0.3-SNAPSHOT"
   echo "==> Loading $tag"
   if ! docker image inspect "$tag" >/dev/null 2>&1; then

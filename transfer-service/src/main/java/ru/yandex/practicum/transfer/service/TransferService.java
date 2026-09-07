@@ -2,6 +2,7 @@ package ru.yandex.practicum.transfer.service;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,8 +16,11 @@ import ru.yandex.practicum.transfer.dto.TransferRequest;
 @RequiredArgsConstructor
 public class TransferService {
 
+    private static final String TRANSFER_FAILED_METRIC = "transfer.failed";
+
     private final AccountsServiceClient accountsServiceClient;
     private final OperationNotifierService operationNotifierService;
+    private final MeterRegistry meterRegistry;
 
     @CircuitBreaker(name = "accounts-service", fallbackMethod = "fallbackAccountsService")
     @Retry(name = "accounts-service")
@@ -31,8 +35,15 @@ public class TransferService {
         return accountsServiceClient.transfer(request, idempotencyKey);
     }
 
-    private AccountResponse fallbackAccountsService(String senderLogin, TransferActionRequest actionRequest, String idempotencyKey, Throwable t) {
-        log.error("Accounts-service unavailable for transfer from '{}' to '{}', amount={}", senderLogin, actionRequest.login(), actionRequest.value(), t);
+    AccountResponse fallbackAccountsService(String senderLogin, TransferActionRequest actionRequest, String idempotencyKey, Throwable t) {
+        log.error("Transfer from '{}' to '{}' failed, amount={}", senderLogin, actionRequest.login(), actionRequest.value(), t);
+        recordFailedTransfer(senderLogin, actionRequest.login());
         throw new RuntimeException("Transfer failed: accounts service is unavailable", t);
+    }
+
+    private void recordFailedTransfer(String senderLogin, String recipientLogin) {
+        meterRegistry.counter(TRANSFER_FAILED_METRIC,
+                "sender_login", senderLogin,
+                "recipient_login", recipientLogin).increment();
     }
 }

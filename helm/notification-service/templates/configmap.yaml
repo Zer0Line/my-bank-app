@@ -22,12 +22,13 @@ data:
         oauth2:
           resourceserver:
             jwt:
-              # Keycloak запущен на хосте (docker-compose). Его issuer (KC_HOSTNAME_URL) —
-              # localhost:8082, недоступный из подов, поэтому проверяем подпись
-              # через JWKS-эндпоинт внутрикластерного Service "keycloak".
+              # Keycloak запущен в minikube. Проверяем подпись через JWKS-эндпоинт
+              # внутрикластерного Service "keycloak".
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
       kafka:
         bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        listener:
+          observation-enabled: true
         consumer:
           group-id: notification-service
           auto-offset-reset: earliest
@@ -37,5 +38,20 @@ data:
             spring.json.trusted.packages: "*"
             spring.json.value.default.type: ru.yandex.practicum.notification.dto.OperationRequest
             spring.json.use.type.headers: "false"
+    management:
+      tracing:
+        sampling:
+          probability: 1.0
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus,metrics
+      metrics:
+        distribution:
+          percentiles:
+            http.server.requests: 0.5,0.95,0.99
     server:
       port: 8085

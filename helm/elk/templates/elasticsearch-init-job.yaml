@@ -1,0 +1,55 @@
+{{- if .Values.elasticsearch.indexTemplate.enabled }}
+# Создаёт в Elasticsearch индексный шаблон (настройки шардов/реплик + маппинги)
+# и предварительно создаёт текущий дневной индекс bank-logs-YYYY.MM.DD.
+# Выполняется после установки/обновления релиза; операции идемпотентны.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "elk.elasticsearch.fullname" . }}-init
+  labels:
+    {{- include "elk.elasticsearch.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        {{- include "elk.elasticsearch.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: curlimages/curl:8.5.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -e
+              ES="http://{{ include "elk.elasticsearch.fullname" . }}:9200"
+              echo "Waiting for Elasticsearch..."
+              until curl -fsS "$ES/_cluster/health?wait_for_status=yellow&timeout=5s" >/dev/null 2>&1; do
+                sleep 3
+              done
+              echo "Applying index template {{ .Values.elasticsearch.indexTemplate.name }}"
+              curl -fsS -XPUT "$ES/_template/{{ .Values.elasticsearch.indexTemplate.name }}" \
+                -H 'Content-Type: application/json' \
+                --data-binary @/templates/bank-logs-template.json >/dev/null
+              INDEX="bank-logs-$(date +%Y.%m.%d)"
+              echo "Creating index $INDEX"
+              if ! curl -fsS -XPUT "$ES/$INDEX" >/dev/null; then
+                echo "$INDEX already exists"
+              fi
+              echo "Elasticsearch init finished."
+          volumeMounts:
+            - name: templates
+              mountPath: /templates
+              readOnly: true
+      volumes:
+        - name: templates
+          configMap:
+            name: {{ include "elk.elasticsearch.fullname" . }}-templates
+{{- end }}

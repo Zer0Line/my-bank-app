@@ -1,27 +1,25 @@
 package ru.yandex.practicum.transfer.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.transfer.dto.OperationRequest;
-import ru.yandex.practicum.transfer.exception.OperationNotificationException;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OperationNotifierService {
 
-    private final KafkaTemplate<String, OperationRequest> kafkaTemplate;
-
     private static final String TOPIC = "transfer-request";
-    private static final long SEND_TIMEOUT_SECONDS = 30;
+    private static final String NOTIFICATION_FAILED_METRIC = "operation.notification.failed";
+
+    private final KafkaTemplate<String, OperationRequest> kafkaTemplate;
+    private final MeterRegistry meterRegistry;
 
     public void notifyOperationStarted(String senderLogin, String recipientLogin, BigDecimal value) {
         List<OperationRequest> requests = List.of(
@@ -32,16 +30,15 @@ public class OperationNotifierService {
         );
 
         for (OperationRequest request : requests) {
-            try {
-                CompletableFuture<SendResult<String, OperationRequest>> future = kafkaTemplate.send(TOPIC, request);
-                future.get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                log.info("Published operation notification to topic '{}': {}", TOPIC, request);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new OperationNotificationException("Interrupted while publishing operation notification", e);
-            } catch (Exception e) {
-                throw new OperationNotificationException("Failed to publish operation notification to topic " + TOPIC, e);
-            }
+            kafkaTemplate.send(TOPIC, request)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("Published operation notification to topic '{}': {}", TOPIC, request);
+                        } else {
+                            log.error("Failed to publish operation notification to topic '{}': {}", TOPIC, request, ex);
+                            meterRegistry.counter(NOTIFICATION_FAILED_METRIC, "topic", TOPIC).increment();
+                        }
+                    });
         }
     }
 }

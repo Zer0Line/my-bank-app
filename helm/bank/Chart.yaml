@@ -14,10 +14,6 @@ dependencies:
     version: 0.1.0
     repository: file://../kafka
     condition: kafka.enabled
-  - name: gateway-service
-    version: 0.1.0
-    repository: file://../gateway-service
-    condition: gateway-service.enabled
   - name: accounts-service
     version: 0.1.0
     repository: file://../accounts-service
@@ -34,3 +30,23 @@ dependencies:
     version: 0.1.0
     repository: file://../notification-service
     condition: notification-service.enabled
+  - name: keycloak
+    version: 0.1.0
+    repository: file://../keycloak
+    condition: keycloak.enabled
+  - name: zipkin
+    version: 0.5.0
+    repository: https://zipkin.io/zipkin-helm
+    condition: zipkin.enabled
+  - name: prometheus
+    version: 0.1.0
+    repository: file://../prometheus
+    condition: prometheus.enabled
+  - name: grafana
+    version: 10.5.15
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+  - name: elk
+    version: 0.1.0
+    repository: file://../elk
+    condition: elk.enabled

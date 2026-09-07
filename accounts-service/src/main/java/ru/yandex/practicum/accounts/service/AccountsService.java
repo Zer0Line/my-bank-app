@@ -1,5 +1,6 @@
 package ru.yandex.practicum.accounts.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,10 +29,13 @@ import java.util.List;
 @Transactional
 public class AccountsService {
 
+    private static final String WITHDRAWAL_FAILED_METRIC = "accounts.withdrawal.failed";
+
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
     private final OperationNotifierService operationNotifierService;
     private final IdempotencyService idempotencyService;
+    private final MeterRegistry meterRegistry;
 
     @Transactional(readOnly = true)
     public AccountResponse getAccount() {
@@ -70,6 +74,7 @@ public class AccountsService {
         };
 
         if (newAmount.compareTo(BigDecimal.ZERO) < 0) {
+            recordFailedWithdrawal(request.login());
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Insufficient funds");
         }
@@ -108,6 +113,10 @@ public class AccountsService {
         return buildFullResponse(request.senderLogin(), sender);
     }
 
+    private void recordFailedWithdrawal(String login) {
+        meterRegistry.counter(WITHDRAWAL_FAILED_METRIC, "login", login).increment();
+    }
+
     private AccountResponse buildFullResponse(String login, AccountEntity account) {
         List<AccountEntity> otherAccounts = accountRepository.findAllByLoginIsNot(login);
         List<AccountDto> accountDtos = otherAccounts.stream()
@@ -126,8 +135,7 @@ public class AccountsService {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Jwt jwt = jwtAuth.getToken();
-            String login = jwt.getClaimAsString("preferred_username");
-            return login;
+            return jwt.getClaimAsString("preferred_username");
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
     }

@@ -1,0 +1,198 @@
+# Logstash
+logstash:
+  replicaCount: 1
+  fullnameOverride: logstash
+
+  image:
+    repository: docker.elastic.co/logstash/logstash
+    tag: "9.0.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    inputPort: 5000
+    apiPort: 9600
+
+  # logstash.yml
+  # NB: Logstash 9.x API настройки переименованы: http.host → api.http.host
+  # (http.host не существует в 9.x → Logstash падает с "Setting doesn't exist").
+  config: |
+    api.http.host: "0.0.0.0"
+    api.http.port: 9600
+  # pipelines.yml — главный pipeline банка.
+  pipelines: |
+    - pipeline.id: bank-logs
+      path.config: "/usr/share/logstash/pipeline"
+      queue.type: memory
+  # pipeline/01-bank-logs.conf — TCP input (JSON lines от сервисов),
+  # output в Elasticsearch: индексы bank-logs-YYYY.MM.dd.
+  pipelineConfig: |
+    input {
+      tcp {
+        port => 5000
+        codec => json_lines
+      }
+    }
+
+    filter {
+      # TODO: фильтры и обогащение логов можно добавить позже
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch:9200"]
+        index => "bank-logs-%{+YYYY.MM.dd}"
+        # Шаблон, настройки шардов/реплик и маппинги создаются заранее в Elasticsearch
+        # (см. elasticsearch.indexTemplate + hook-job elasticsearch-init).
+        manage_template => false
+      }
+    }
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1024Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# Elasticsearch
+elasticsearch:
+  replicaCount: 1
+  # Имя Service/StatefulSet внутри кластера. Logstash пишет в elasticsearch:9200.
+  fullnameOverride: elasticsearch
+
+  image:
+    # Kibana 7.10.2 требует маппинг-тип [flattened] для .kibana,
+    # которого нет в elasticsearch-oss (Kibana падает: mapper_parsing_exception).
+    # Elasticsearch 7.10.2 (default, free Basic license) с xpack.security.enabled=false
+    # свободен от подписки и полностью совместим с Kibana.
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "7.10.2"
+    pullPolicy: IfNotPresent
+
+  service:
+    httpPort: 9200
+    transportPort: 9300
+
+  # Heap Elasticsearch.
+  heapSize: "512m"
+
+  persistence:
+    enabled: true
+    storageClass: "local-path"
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      # Gi → OOMKill.
+      # ES 7.10.2 в контейнере требует лимит 2Gi.
+      memory: 2Gi
+
+  # elasticsearch.yml
+  config: |
+    cluster.name: bank-logs
+    node.name: ${NODE_NAME}
+    network.host: 0.0.0.0
+    http.port: 9200
+    transport.port: 9300
+    # Одиночный узел (режим разработки): отключает bootstrap-checks
+    # (напр. vm.max_map_count), не участвует в discovery с другими узлами.
+    discovery.type: single-node
+    action.destructive_requires_name: true
+    # elasticsearch 7.10.2 (default, не OSS) нужен для Kibana
+    # (тип flattened). xpack.* настройки не задаём — Basic-лицензия по умолчанию
+    # без security.
+
+  # Индексный шаблон и маппинги для индексов bank-logs-*.
+  # Применяется hook-job'ом elasticsearch-init (PUT _template/bank-logs-template).
+  # Single-node: 1 первичный шард на индекс, реплик 0 —
+  # на одном узле реплика не размещается (кластер уходил бы в yellow), т.к. объём
+  # логов мал и ротация по дням. При переходе на multi-node поднять replicas до 1.
+  indexTemplate:
+    enabled: true
+    name: bank-logs-template
+    # legacy template (ES 7.x), JSON-тело для PUT _template/<name>.
+    body: |
+      {
+        "index_patterns": ["bank-logs-*"],
+        "order": 0,
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 0,
+          "refresh_interval": "5s"
+        },
+        "mappings": {
+          "dynamic": false,
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "@version": { "type": "keyword" },
+            "message": {
+              "type": "text",
+              "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+            },
+            "logger_name": { "type": "keyword" },
+            "thread_name": { "type": "keyword" },
+            "level": { "type": "keyword" },
+            "service_name": { "type": "keyword" },
+            "trace_id": { "type": "keyword" },
+            "span_id": { "type": "keyword" },
+            "stack_trace": { "type": "text" },
+            "host": { "type": "keyword" },
+            "port": { "type": "long" },
+            "mdc": { "type": "object", "dynamic": true }
+          }
+        }
+      }
+
+# Kibana
+kibana:
+  replicaCount: 1
+  # Имя Service/Deployment внутри кластера. Доступ через Ingress/port-forward.
+  fullnameOverride: kibana
+
+  image:
+    # Kibana 7.10.2 — совместимая с Elasticsearch 7.10.2, с бесплатной Basic-лицензией
+    # (Kibana 8.x несовместим с ES 7.x).
+    repository: docker.elastic.co/kibana/kibana
+    tag: "7.10.2"
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 5601
+
+  # Index Pattern для Discover/Visualize (bank-logs-*) создаётся hook-джобой
+  # kibana-init после установки/обновления релиза.
+  indexPattern:
+    enabled: true
+    name: bank-logs
+    title: bank-logs-*
+
+  # kibana.yml
+  config: |
+    server.host: "0.0.0.0"
+    server.port: 5601
+    server.name: "kibana"
+    # Kibana доступен и через Ingress по подпути /kibana (nginx rewrite),
+    # и через port-forward на localhost. basePath+rewriteBasePath дают корректные
+    # пути статики/API при любом способе доступа.
+    server.basePath: "/kibana"
+    server.rewriteBasePath: true
+    # Elasticsearch OSS без X-Pack — включаем Basic-безопасность вручную
+    # (иначе Kibana 7.x сам включает security и требует TLS/Паролей).
+    xpack.security.enabled: false
+    xpack.encryptedSavedObjects.encryptionKey: "d2a91b6c3f8e4d7a9c1b5e2f8d4a6c7b"
+    elasticsearch.hosts: ["http://elasticsearch:9200"]
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi

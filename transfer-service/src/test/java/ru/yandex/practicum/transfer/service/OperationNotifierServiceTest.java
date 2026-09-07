@@ -1,5 +1,7 @@
 package ru.yandex.practicum.transfer.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,6 +14,7 @@ import ru.yandex.practicum.transfer.dto.OperationRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +29,12 @@ class OperationNotifierServiceTest {
     @Mock
     private KafkaTemplate<String, OperationRequest> kafkaTemplate;
 
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter counter;
+
     @Captor
     private ArgumentCaptor<OperationRequest> requestCaptor;
 
@@ -35,7 +44,7 @@ class OperationNotifierServiceTest {
     @Test
     void notifyOperationStarted() {
         when(kafkaTemplate.send(eq("transfer-request"), any(OperationRequest.class)))
-                .thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         operationNotifierService.notifyOperationStarted("sender", "recipient", BigDecimal.valueOf(300));
 
@@ -46,5 +55,18 @@ class OperationNotifierServiceTest {
                 "Transfer to recipient started", BigDecimal.valueOf(300)), sent.get(0));
         assertEquals(new OperationRequest("recipient", "TRANSFER_RECEIVED",
                 "Transfer from sender started", BigDecimal.valueOf(300)), sent.get(1));
+    }
+
+    @Test
+    void notifyOperationStartedIncrementsMetricOnFailure() {
+        when(kafkaTemplate.send(eq("transfer-request"), any(OperationRequest.class)))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("kafka down")));
+        when(meterRegistry.counter("operation.notification.failed", "topic", "transfer-request"))
+                .thenReturn(counter);
+
+        operationNotifierService.notifyOperationStarted("sender", "recipient", BigDecimal.valueOf(300));
+
+        verify(meterRegistry, times(2)).counter("operation.notification.failed", "topic", "transfer-request");
+        verify(counter, times(2)).increment();
     }
 }

@@ -11,9 +11,8 @@ data:
         oauth2:
           resourceserver:
             jwt:
-              # Keycloak запущен на хосте (docker-compose). Его issuer (KC_HOSTNAME_URL) —
-              # localhost:8082, недоступный из подов, поэтому проверяем подпись
-              # через JWKS-эндпоинт внутрикластерного Service "keycloak".
+              # Keycloak запущен в minikube. Проверяем подпись через JWKS-эндпоинт
+              # внутрикластерного Service "keycloak".
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
           client:
             registration:
@@ -26,6 +25,8 @@ data:
                 token-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/token
       kafka:
         bootstrap-servers: {{ .Values.kafka.bootstrapServers }}
+        template:
+          observation-enabled: true
         producer:
           key-serializer: org.apache.kafka.common.serialization.StringSerializer
           value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -45,7 +46,6 @@ data:
             base-config: default
             ignoreExceptions:
               - ru.yandex.practicum.cash.exception.InsufficientFundsException
-              - ru.yandex.practicum.cash.exception.OperationNotificationException
           notification-service:
             base-config: default
       retry:
@@ -72,7 +72,22 @@ data:
           resourceserver:
             jwt:
               jwk-set-uri: http://keycloak:8082/realms/bank-realm/protocol/openid-connect/certs
-              issuer-uri: http://localhost:8082/realms/bank-realm
+              issuer-uri: http://localhost:18082/realms/bank-realm
               audiences: bank-ui
+    management:
+      tracing:
+        sampling:
+          probability: 1.0
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus,metrics
+      metrics:
+        distribution:
+          percentiles:
+            http.server.requests: 0.5,0.95,0.99
     server:
       port: 8084
