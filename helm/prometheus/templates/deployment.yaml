@@ -51,12 +51,18 @@ spec:
               mountPath: /etc/prometheus/prometheus.yml
               subPath: prometheus.yml
               readOnly: true
+            - name: rules
+              mountPath: /etc/prometheus/rules
+              readOnly: true
             - name: data
               mountPath: /prometheus
       volumes:
         - name: config
           configMap:
             name: {{ include "prometheus.fullname" . }}-config
+        - name: rules
+          configMap:
+            name: {{ include "prometheus.fullname" . }}-rules
         - name: data
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:

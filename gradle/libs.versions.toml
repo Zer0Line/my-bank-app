@@ -16,6 +16,7 @@ spring-security-web = { module = "org.springframework.security:spring-security-w
 spring-security-test = { module = "org.springframework.security:spring-security-test" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
 postgresql = { module = "org.postgresql:postgresql" }
 spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
 feign-hc5 = { module = "io.github.openfeign:feign-hc5" }

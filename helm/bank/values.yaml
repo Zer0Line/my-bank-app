@@ -291,6 +291,206 @@ grafana:
                   relativeTimeRange:
                     from: 0
                     to: 0
+            - uid: withdrawal-failures
+              title: 'Неуспешные снятия (accounts) > 0 за 5m'
+              condition: C
+              for: 1m
+              labels:
+                severity: warning
+              annotations:
+                summary: 'Появились неуспешные снятия'
+                description: 'sum(increase(accounts_withdrawal_failed_total[5m])) > 0'
+              data:
+                - refId: A
+                  datasourceUid: prometheus
+                  model:
+                    refId: A
+                    datasource:
+                      type: prometheus
+                      uid: prometheus
+                    expr: 'sum(increase(accounts_withdrawal_failed_total[5m]))'
+                    instant: true
+                    range: false
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                  relativeTimeRange:
+                    from: 300
+                    to: 0
+                - refId: C
+                  datasourceUid: __expr__
+                  model:
+                    refId: C
+                    datasource:
+                      type: __expr__
+                      uid: __expr__
+                    type: threshold
+                    expression: A
+                    conditions:
+                      - type: query
+                        evaluator:
+                          type: gt
+                          params:
+                            - 0
+                        operator:
+                          type: and
+                        query:
+                          params:
+                            - A
+                        reducer:
+                          type: last
+                  relativeTimeRange:
+                    from: 0
+                    to: 0
+            - uid: transfer-failures
+              title: 'Неуспешные переводы (transfer) > 0 за 5m'
+              condition: C
+              for: 1m
+              labels:
+                severity: warning
+              annotations:
+                summary: 'Появились неуспешные переводы'
+                description: 'increase(transfer:failed_total[5m]) > 0 (recording rule: sum(transfer_failed_total))'
+              data:
+                - refId: A
+                  datasourceUid: prometheus
+                  model:
+                    refId: A
+                    datasource:
+                      type: prometheus
+                      uid: prometheus
+                    expr: 'sum(increase(transfer:failed_total[5m]))'
+                    instant: true
+                    range: false
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                  relativeTimeRange:
+                    from: 300
+                    to: 0
+                - refId: C
+                  datasourceUid: __expr__
+                  model:
+                    refId: C
+                    datasource:
+                      type: __expr__
+                      uid: __expr__
+                    type: threshold
+                    expression: A
+                    conditions:
+                      - type: query
+                        evaluator:
+                          type: gt
+                          params:
+                            - 0
+                        operator:
+                          type: and
+                        query:
+                          params:
+                            - A
+                        reducer:
+                          type: last
+                  relativeTimeRange:
+                    from: 0
+                    to: 0
+            - uid: notification-save-failures
+              title: 'Ошибки сохранения уведомлений (notification) > 0 за 5m'
+              condition: C
+              for: 1m
+              labels:
+                severity: warning
+              annotations:
+                summary: 'Появились ошибки сохранения уведомлений в БД'
+                description: 'sum(increase(notification_save_failed_total[5m])) > 0'
+              data:
+                - refId: A
+                  datasourceUid: prometheus
+                  model:
+                    refId: A
+                    datasource:
+                      type: prometheus
+                      uid: prometheus
+                    expr: 'sum(increase(notification_save_failed_total[5m]))'
+                    instant: true
+                    range: false
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                  relativeTimeRange:
+                    from: 300
+                    to: 0
+                - refId: C
+                  datasourceUid: __expr__
+                  model:
+                    refId: C
+                    datasource:
+                      type: __expr__
+                      uid: __expr__
+                    type: threshold
+                    expression: A
+                    conditions:
+                      - type: query
+                        evaluator:
+                          type: gt
+                          params:
+                            - 0
+                        operator:
+                          type: and
+                        query:
+                          params:
+                            - A
+                        reducer:
+                          type: last
+                  relativeTimeRange:
+                    from: 0
+                    to: 0
+            - uid: operation-publish-failures
+              title: 'Потерянные события уведомлений (operation, Kafka send) > 0 за 5m'
+              condition: C
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: 'События уведомлений потеряны при публикации в Kafka'
+                description: 'sum(increase(operation_notification_failed_total[5m])) > 0 — счётчик в OperationNotifierService (cash/transfer)'
+              data:
+                - refId: A
+                  datasourceUid: prometheus
+                  model:
+                    refId: A
+                    datasource:
+                      type: prometheus
+                      uid: prometheus
+                    expr: 'sum(increase(operation_notification_failed_total[5m]))'
+                    instant: true
+                    range: false
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                  relativeTimeRange:
+                    from: 300
+                    to: 0
+                - refId: C
+                  datasourceUid: __expr__
+                  model:
+                    refId: C
+                    datasource:
+                      type: __expr__
+                      uid: __expr__
+                    type: threshold
+                    expression: A
+                    conditions:
+                      - type: query
+                        evaluator:
+                          type: gt
+                          params:
+                            - 0
+                        operator:
+                          type: and
+                        query:
+                          params:
+                            - A
+                        reducer:
+                          type: last
+                  relativeTimeRange:
+                    from: 0
+                    to: 0
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -669,6 +869,131 @@ grafana:
                   }
                 ],
                 "title": "Уведомления: всего ошибок сохранения за период по логину",
+                "type": "stat"
+              },
+              {
+                "collapsed": false,
+                "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+                "id": 30,
+                "panels": [],
+                "title": "Переводы: агрегаты (recording rules)",
+                "type": "row"
+              },
+              {
+                "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "ops",
+                    "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" }
+                  },
+                  "overrides": []
+                },
+                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+                "id": 31,
+                "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] } },
+                "targets": [
+                  {
+                    "expr": "sum(rate(transfer:failed_by_sender:sum[1m])) by (sender_login)",
+                    "legendFormat": "sender {{sender_login}}",
+                    "refId": "A"
+                  },
+                  {
+                    "expr": "sum(rate(transfer:failed_by_recipient:sum[1m])) by (recipient_login)",
+                    "legendFormat": "recipient {{recipient_login}}",
+                    "refId": "B"
+                  }
+                ],
+                "title": "Переводы: 1/мин по отправителю / получателю (recording rules)",
+                "type": "timeseries"
+              },
+              {
+                "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+                "fieldConfig": {
+                  "defaults": {
+                    "mappings": [],
+                    "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+                    "unit": "short"
+                  },
+                  "overrides": []
+                },
+                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+                "id": 32,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                  "textMode": "auto"
+                },
+                "targets": [
+                  {
+                    "expr": "sum(increase(transfer:failed_total[$__range]))",
+                    "legendFormat": "failed total",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Переводы: всего неуспешных за период (recording rule)",
+                "type": "stat"
+              },
+              {
+                "collapsed": false,
+                "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+                "id": 33,
+                "panels": [],
+                "title": "События уведомлений (operation): потерянные при публикации в Kafka",
+                "type": "row"
+              },
+              {
+                "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+                "fieldConfig": {
+                  "defaults": {
+                    "unit": "ops",
+                    "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never" }
+                  },
+                  "overrides": []
+                },
+                "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+                "id": 34,
+                "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] } },
+                "targets": [
+                  {
+                    "expr": "sum(rate(operation_notification_failed_total[1m])) by (topic)",
+                    "legendFormat": "{{topic}}",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Уведомления (operation): событие потеряно при публикации в Kafka, 1/мин по топику",
+                "type": "timeseries"
+              },
+              {
+                "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+                "fieldConfig": {
+                  "defaults": {
+                    "mappings": [],
+                    "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
+                    "unit": "short"
+                  },
+                  "overrides": []
+                },
+                "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+                "id": 35,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+                  "textMode": "auto"
+                },
+                "targets": [
+                  {
+                    "expr": "sum(increase(operation_notification_failed_total[$__range])) by (topic)",
+                    "legendFormat": "{{topic}}",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Уведомления (operation): всего потеряно за период по топику",
                 "type": "stat"
               }
             ],

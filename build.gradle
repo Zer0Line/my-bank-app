@@ -59,6 +59,13 @@ subprojects {
             implementation libs.micrometer.registry.prometheus
             implementation libs.logstash.logback.encoder
         }
+        sourceSets {
+            main {
+                resources {
+                    srcDir rootProject.file('config/logback')
+                }
+            }
+        }
         tasks.named('bootBuildImage') {
             onlyIf { false }
         }

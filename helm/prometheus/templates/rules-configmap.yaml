@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus.fullname" . }}-rules
+  labels:
+    {{- include "prometheus.labels" . | nindent 4 }}
+data:
+  transfer-rules.yml: |
+    # Низкокардинальные агрегаты по transfer.failed.
+    # Сырая метрика хранит пары {sender_login, recipient_login}, т.к. по заданию требуется агрегация по логину и паре 
+    # в случае ошибки перевода между счетами; 
+    # Дашборды и алерты используют эти суммы, чтобы не зависеть от кардинальности отдельных пар.
+    groups:
+      - name: transfer-failures
+        interval: 30s
+        rules:
+          - record: transfer:failed_by_sender:sum
+            expr: sum by (sender_login) (transfer_failed_total)
+          - record: transfer:failed_by_recipient:sum
+            expr: sum by (recipient_login) (transfer_failed_total)
+          - record: transfer:failed_total
+            expr: sum(transfer_failed_total)
